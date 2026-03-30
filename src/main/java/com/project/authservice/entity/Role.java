@@ -1,6 +1,6 @@
 package com.project.authservice.entity;
 
-import jakarta.persistence.Column;
+import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
 
@@ -9,7 +9,10 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Entity
+@Table(name = "roles")
 public class Role {
+    @Id
     private UUID id=UUID.randomUUID();
     @Column(unique = true, nullable = false)
     private String name;
