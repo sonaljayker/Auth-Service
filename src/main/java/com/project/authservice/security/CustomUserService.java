@@ -1,6 +1,5 @@
 package com.project.authservice.security;
 
-
 import com.project.authservice.Exception.ResourceNotFoundException;
 import com.project.authservice.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
