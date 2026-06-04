@@ -77,11 +77,7 @@ public class JwtService {
     }
 
     public Jws<Claims> parse(String token) {
-        try {
-            return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
-        } catch (JwtException e) {
-            throw e;
-        }
+        return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
     }
 
     public boolean isAccessToken(String token) {
