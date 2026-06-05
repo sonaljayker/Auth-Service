@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/test-users")
 public class UserController {
 
     private final UserServiceImp userServiceImp;
@@ -23,6 +23,7 @@ public class UserController {
     //to get all users
     @GetMapping
     public ResponseEntity<Iterable<UserDto>> getAllUsers() {
+        System.out.println("=======Authentitaion=======");
         return ResponseEntity.ok(userServiceImp.getAllUsers());
     }
 
