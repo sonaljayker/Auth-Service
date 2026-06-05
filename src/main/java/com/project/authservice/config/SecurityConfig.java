@@ -29,7 +29,6 @@ public class SecurityConfig {
                 .sessionManagement(sm-> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests ->
                 authorizeRequests.requestMatchers("/api/v1/auth/register").permitAll()
-                        .requestMatchers("/api/v1/login/").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
@@ -37,7 +36,7 @@ public class SecurityConfig {
                     response.setStatus(401);
                     response.setContentType("application/json");
                     String message = "Unauthorized access"+authException.getMessage();
-                    Map<String, String> errorMap =Map.of("Message", message, "Status", String.valueOf(401), "Unauthorized",Integer.toString(401));
+                    Map<String, String> errorMap = Map.of("Message", message, "Status", String.valueOf(401), "Unauthorized",Integer.toString(401));
                     var objectMapper = new ObjectMapper();
                     response.getWriter().write(objectMapper.writeValueAsString(errorMap));
                 }))
