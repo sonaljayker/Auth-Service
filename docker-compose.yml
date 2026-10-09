@@ -15,10 +15,32 @@ services:
     networks:
       - auth-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_service"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auth-service-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/auth_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SECURITY_JWT_SECRET: change-me-please-this-is-very-long-secret-key-1234567890
+      SECURITY_JWT_ACCESS_TTL_SECONDS: 900
+      SECURITY_JWT_REFRESH_TTL_SECONDS: 604800
+      SECURITY_JWT_ISSUER: auth-service
+    ports:
+      - "8080:8080"
+    networks:
+      - auth-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
