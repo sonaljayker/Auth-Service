@@ -26,17 +26,22 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
-                .sessionManagement(sm-> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests ->
-                authorizeRequests.requestMatchers("/api/v1/auth/register").permitAll()
-                        .anyRequest().authenticated()
+                        authorizeRequests
+                                .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                                .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
                     authException.printStackTrace();
                     response.setStatus(401);
                     response.setContentType("application/json");
-                    String message = "Unauthorized access"+authException.getMessage();
-                    Map<String, String> errorMap = Map.of("Message", message, "Status", String.valueOf(401), "Unauthorized",Integer.toString(401));
+                    String message = "Unauthorized access: " + authException.getMessage();
+                    Map<String, String> errorMap = Map.of(
+                            "Message", message,
+                            "Status", String.valueOf(401),
+                            "Unauthorized", "401"
+                    );
                     var objectMapper = new ObjectMapper();
                     response.getWriter().write(objectMapper.writeValueAsString(errorMap));
                 }))
@@ -48,5 +53,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }

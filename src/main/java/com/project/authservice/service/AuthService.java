@@ -2,8 +2,9 @@ package com.project.authservice.service;
 
 import com.project.authservice.dto.UserDto;
 
-public interface AuthService {
-    public UserDto register(UserDto userDto);
+import java.util.Map;
 
-    //login
+public interface AuthService {
+    UserDto register(UserDto userDto);
+    Map<String, String> login(UserDto userDto);
 }
