@@ -7,65 +7,34 @@ This project uses Docker to run both the PostgreSQL database and the Spring Boot
 - Docker installed on your system
 - Docker Compose installed on your system
 
-## Getting Started
+## Quick Start
 
-### 1. Start PostgreSQL Database
-
-```bash
-docker-compose up -d postgres
-```
-
-This will:
-- Pull the PostgreSQL 15 Alpine image
-- Create a container named `auth-service-db`
-- Initialize the database with the name `auth_service`
-- Map port 5432 on your host to port 5432 in the container
-- Store data in a persistent volume named `postgres_data`
-
-### 2. Verify Database is Running
-
-```bash
-docker-compose ps
-```
-
-You should see the `postgres` service with status `Up`.
-
-### 3. Build the Application Docker Image
-
-```bash
-docker build -t auth-service:1.0 .
-```
-
-This will:
-- Build a multi-stage Docker image
-- First stage: Download dependencies and build the JAR
-- Second stage: Run the JAR in a lightweight JDK Alpine image
-
-### 4. Run the Application Container
-
-```bash
-docker run -d \
-  --name auth-service-app \
-  -p 8080:8080 \
-  --network auth-network \
-  auth-service:1.0
-```
-
-Alternatively, add this to `docker-compose.yml` and run:
+### Start Everything in One Command
 
 ```bash
 docker-compose up -d
 ```
 
-### 5. Verify Both Services are Running
+This will:
+- Pull and start PostgreSQL 15 Alpine container
+- Build the Spring Boot application Docker image
+- Start the application container
+- Create a shared network for communication between containers
+- Expose the API on `http://localhost:8080`
+- Expose PostgreSQL on `localhost:5432` (if needed for debugging)
+
+### Verify Services are Running
 
 ```bash
 docker-compose ps
 ```
 
-You should see:
-- `postgres` service running on port 5432
-- `auth-service-app` service running on port 8080
+Expected output:
+```
+NAME                COMMAND                  SERVICE      STATUS      PORTS
+auth-service-app    "java -jar app.jar"     app          Up (healthy)
+auth-service-db     "postgres"              postgres     Up (healthy)
+```
 
 ## API Endpoints
 
@@ -83,6 +52,19 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
   }'
 ```
 
+Response (201 Created):
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "email": "user@example.com",
+  "username": "testuser",
+  "enable": true,
+  "provider": "LOCAL",
+  "createdAt": "2026-10-09T13:00:00Z",
+  "updatedAt": "2026-10-09T13:00:00Z"
+}
+```
+
 ### Login User
 
 ```bash
@@ -94,13 +76,63 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
   }'
 ```
 
-Response:
+Response (200 OK):
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
-  "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
+  "accessToken": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJpYXQiOjE2OTcwMDAwMDAsImV4cCI6MTY5NzAwMDkwMCwiaXNzIjoiYXV0aC1zZXJ2aWNlIiwianRpIjoiYTAwZTg0MzAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwiZW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwicm9sZSI6W10sInR5cCI6ImFjY2VzcyJ9.signature",
+  "refreshToken": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJpYXQiOjE2OTcwMDAwMDAsImV4cCI6MTY5NzYwNDgwMCwiaXNzIjoiYXV0aC1zZXJ2aWNlIiwianRpIjoiYTAwZTg0MzAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIiwiZW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwicm9sZSI6W10sInR5cCI6InJlZnJlc2gifQ.signature",
   "message": "Login successful"
 }
+```
+
+### Use Access Token for Protected Endpoints
+
+```bash
+curl -X GET http://localhost:8080/api/v1/test-users \
+  -H "Authorization: Bearer <YOUR_ACCESS_TOKEN>"
+```
+
+## Docker Compose Services
+
+### PostgreSQL Service
+
+- **Image**: postgres:15-alpine
+- **Container Name**: auth-service-db
+- **Port**: 5432
+- **Database**: auth_service
+- **Username**: postgres
+- **Password**: postgres
+- **Volume**: postgres_data (persistent storage)
+- **Network**: auth-network
+- **Health Check**: Enabled - waits for database to be ready
+
+### Application Service
+
+- **Build**: Dockerfile (multi-stage build)
+- **Container Name**: auth-service-app
+- **Port**: 8080
+- **Environment**: Uses Docker environment variables for configuration
+- **Network**: auth-network (connects to PostgreSQL)
+- **Depends On**: postgres (waits for health check)
+- **Restart Policy**: unless-stopped
+
+## Important Configuration
+
+The application uses Docker-based configuration:
+
+**Database Connection** (from docker-compose.yml):
+```
+SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/auth_service
+```
+
+Note: The hostname is `postgres` (the service name in docker-compose), NOT `localhost`
+
+**JWT Configuration**:
+```
+SECURITY_JWT_SECRET: change-me-please-this-is-very-long-secret-key-1234567890
+SECURITY_JWT_ACCESS_TTL_SECONDS: 900 (15 minutes)
+SECURITY_JWT_REFRESH_TTL_SECONDS: 604800 (7 days)
+SECURITY_JWT_ISSUER: auth-service
 ```
 
 ## Useful Docker Commands
@@ -108,11 +140,11 @@ Response:
 ### View Logs
 
 ```bash
-# View PostgreSQL logs
-docker-compose logs postgres
+# View application logs
+docker-compose logs app -f
 
-# View Application logs
-docker-compose logs auth-service-app
+# View PostgreSQL logs
+docker-compose logs postgres -f
 
 # View all logs
 docker-compose logs -f
@@ -124,10 +156,22 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### Stop and Remove Data
+### Stop and Remove All Data
 
 ```bash
 docker-compose down -v
+```
+
+### Rebuild Application Image
+
+```bash
+docker-compose build app
+```
+
+### Rebuild Everything
+
+```bash
+docker-compose up -d --build
 ```
 
 ### Access PostgreSQL Shell
@@ -136,62 +180,114 @@ docker-compose down -v
 docker exec -it auth-service-db psql -U postgres -d auth_service
 ```
 
-### Rebuild and Restart Everything
+Useful PostgreSQL commands:
+```sql
+-- List tables
+\dt
+
+-- Describe users table
+\d users
+
+-- Query all users
+SELECT * FROM users;
+
+-- Exit
+\q
+```
+
+### View Network
 
 ```bash
-docker-compose down -v
-docker-compose build
-docker-compose up -d
+docker network ls
+docker network inspect auth-network
 ```
 
 ## Troubleshooting
 
-### PostgreSQL Connection Refused
-
-- Make sure PostgreSQL container is running: `docker-compose ps`
-- Wait a few seconds for the database to fully initialize
-- Check database logs: `docker-compose logs postgres`
-
-### Application Can't Connect to Database
-
-- Verify both services are on the same network: `auth-network`
-- The connection string uses hostname `postgres` (container name)
-- Make sure you're not running the app locally against Docker DB without proper networking
-
 ### Port Already in Use
 
 ```bash
-# Check what's using port 5432 or 8080
-lsof -i :5432
+# Check what's using port 8080 or 5432
 lsof -i :8080
+lsof -i :5432
 
-# Kill the process or change the port mapping in docker-compose.yml
+# Modify port mappings in docker-compose.yml
+# Example: "9090:8080" to use port 9090 on host
 ```
 
-## Environment Variables
+### Application Can't Connect to Database
 
-You can override database credentials by modifying `docker-compose.yml`:
+1. Verify PostgreSQL is healthy:
+   ```bash
+   docker-compose logs postgres
+   ```
 
-```yaml
-environment:
-  POSTGRES_USER: your_username
-  POSTGRES_PASSWORD: your_password
-  POSTGRES_DB: your_database
+2. Verify both services are on the same network:
+   ```bash
+   docker network inspect auth-network
+   ```
+
+3. Check application logs:
+   ```bash
+   docker-compose logs app
+   ```
+
+### Database Connection Refused
+
+- Wait 10-15 seconds for PostgreSQL to fully initialize
+- The health check ensures the app starts only after the database is ready
+- Check the logs for connection errors
+
+### Rebuild Everything
+
+If something goes wrong, start fresh:
+
+```bash
+# Stop and remove everything
+docker-compose down -v
+
+# Rebuild all images
+docker-compose build --no-cache
+
+# Start fresh
+docker-compose up -d
 ```
 
-**Note**: Update `src/main/resources/application.properties` accordingly.
+## Production Considerations
 
-## Security Notes
+1. **Change Default Credentials**:
+   - Update POSTGRES_PASSWORD in docker-compose.yml
+   - Update SPRING_DATASOURCE_PASSWORD
 
-1. **JWT Secret**: Change the default JWT secret in `application.properties` to a production-grade secret
-2. **Database Credentials**: Use environment variables or secrets management for production
-3. **Network**: The `auth-network` bridge network ensures secure communication between containers
-4. **Volumes**: Database data is persisted in the `postgres_data` volume
+2. **Change JWT Secret**:
+   - Replace with a strong, random secret in docker-compose.yml
+   - Use 32+ characters
+
+3. **Use Environment Files**:
+   Create `.env` file:
+   ```
+   POSTGRES_USER=prod_user
+   POSTGRES_PASSWORD=very_secure_password_here
+   JWT_SECRET=production_grade_secret_key_here
+   ```
+
+4. **Use Secrets Management**:
+   - Docker Swarm Secrets
+   - Kubernetes Secrets
+   - AWS Secrets Manager
+   - HashiCorp Vault
+
+5. **Security Hardening**:
+   - Remove unnecessary ports
+   - Use read-only filesystems where possible
+   - Run containers as non-root users
+   - Use network policies
 
 ## Next Steps
 
-- Set up CI/CD pipelines with Docker images
-- Use environment variables for configuration management
-- Implement secrets management for sensitive data
-- Add Redis cache layer if needed
-- Configure nginx reverse proxy for production
+1. Start the containers: `docker-compose up -d`
+2. Test the API endpoints with curl or Postman
+3. Monitor logs: `docker-compose logs -f`
+4. For production, implement proper secrets management
+5. Consider adding reverse proxy (Nginx) in front of the app
+6. Set up CI/CD pipelines for automated builds and deployments
