@@ -18,9 +18,14 @@ public class UserDto {
     private String username;
     private String password;
     private String email;
+    @Builder.Default
     private boolean enable=true;
+    @Builder.Default
     private Instant createdAt= now();
+    @Builder.Default
     private Instant updatedAt= now();
+    @Builder.Default
     private Provider provider=Provider.LOCAL;
+    @Builder.Default
     private Set<RoleDto> roles=new HashSet<>();
 }

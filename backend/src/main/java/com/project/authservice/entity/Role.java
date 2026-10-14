@@ -13,6 +13,7 @@ import java.util.UUID;
 @Table(name = "roles")
 public class Role {
     @Id
+    @Builder.Default
     private UUID id=UUID.randomUUID();
     @Column(unique = true, nullable = false)
     private String name;

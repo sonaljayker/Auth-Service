@@ -1,0 +1,9 @@
+target/
+backend/target/
+*.class
+*.log
+.idea/
+*.iml
+.mvn/wrapper/maven-wrapper.jar
+.DS_Store
+Thumbs.db

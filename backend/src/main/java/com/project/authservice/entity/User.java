@@ -27,12 +27,17 @@ public class User implements UserDetails {
     private String username;
     private String password;
     private String email;
+    @Builder.Default
     private boolean enable=true;
+    @Builder.Default
     private Instant createdAt= now();
+    @Builder.Default
     private Instant updatedAt= now();
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     private Provider provider=Provider.LOCAL;
 
+    @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "roles",joinColumns = @JoinColumn(name = "user_id"),inverseJoinColumns =@JoinColumn(name = "role_id"))
     private Set<Role> roles=new HashSet<>();
@@ -61,7 +66,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.email;
+        return (this.username != null && !this.username.isBlank()) ? this.username : this.email;
     }
 
     @Override
