@@ -22,7 +22,7 @@ services:
 
   app:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: auth-service-app
     depends_on:
