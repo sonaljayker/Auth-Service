@@ -23,7 +23,6 @@ public class UserController {
     //to get all users
     @GetMapping
     public ResponseEntity<Iterable<UserDto>> getAllUsers() {
-        System.out.println("=======Authentitaion=======");
         return ResponseEntity.ok(userServiceImp.getAllUsers());
     }
 
