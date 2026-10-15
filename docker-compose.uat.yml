@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  app:
+    environment:
+      - SPRING_PROFILES_ACTIVE=uat
+      - SECURITY_JWT_SECRET=${UAT_JWT_SECRET:-change-me-uat}
+    ports:
+      - "8080:8080"
+
+  postgres:
+    ports:
+      - "5432:5432"
