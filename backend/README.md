@@ -15,9 +15,9 @@ The backend provides:
 
 ## Stack
 
-- Java 21
+- Java 25
 - Maven
-- Spring Boot 3.3.11
+- Spring Boot 3.5.6
 - PostgreSQL
 - Spring Security
 - JWT

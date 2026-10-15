@@ -27,5 +27,8 @@ public class UserDto {
     @Builder.Default
     private Provider provider=Provider.LOCAL;
     @Builder.Default
+    private boolean twoFactorEnabled = false;
+    private String phoneNumber;
+    @Builder.Default
     private Set<RoleDto> roles=new HashSet<>();
 }

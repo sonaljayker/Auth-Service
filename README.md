@@ -1,6 +1,6 @@
 # Auth Service
 
-A Spring Boot authentication service built with Java 21, Maven, PostgreSQL, Spring Security, and JWT-based authentication.
+A Spring Boot authentication service built with Java 25, Maven, PostgreSQL, Spring Security, and JWT-based authentication.
 
 ## Project structure
 
@@ -31,8 +31,8 @@ Auth-Service/
 
 ## Tech stack
 
-- Java 21
-- Spring Boot 3.3.11
+- Java 25
+- Spring Boot 3.5.6
 - Spring Security
 - JWT (access + refresh tokens)
 - PostgreSQL
@@ -41,19 +41,21 @@ Auth-Service/
 
 ## Features
 
-- User registration
-- User login
-- JWT token generation and validation
-- Password hashing with BCrypt
-- PostgreSQL persistence
-- Nginx reverse proxy support
-- Dev / UAT / Prod compose overrides
+- **Enterprise Registration & Login**: Email + Password with BCrypt encryption & JWT (Access + Refresh tokens).
+- **Two-Factor Authentication (2FA / TOTP)**: RFC 6238 time-step algorithm with ZXing QR code generation compatible with Google Authenticator, Microsoft Authenticator, and Authy.
+- **Passwordless OTP Login**: 6-digit numeric OTP generation with 5-minute TTL, rate-limiting, and Gmail SMTP delivery.
+- **Forgot & Reset Password**: Multi-step recovery workflow with secure 6-digit verification code sent via Gmail.
+- **Instant Web QR Code Scan Login**: Real-time session QR code generation, browser polling, and instant authentication upon mobile approval.
+- **Gmail SMTP Integration**: High-reliability Gmail SMTP dispatch with HTML email templates and console fallback for local testing.
+- **PostgreSQL Persistence**: Hibernate entities for users, roles, OTP tokens, password reset tokens, and QR sessions.
+- **Nginx Reverse Proxy Support**: TLS termination and routing.
+- **Dev / UAT / Prod Compose Overrides**: Production-ready container orchestration.
 
 ## Quick start
 
 ### Prerequisites
 
-- Java 21
+- Java 25
 - Maven
 - Docker Desktop / Docker Engine
 - Node.js (optional, only for npm convenience scripts)
@@ -105,8 +107,22 @@ Base path:
 
 Endpoints:
 
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
+### Authentication & Security
+- `POST /api/v1/auth/register` — Register a new account
+- `POST /api/v1/auth/login` — Sign in with password (triggers 2FA challenge if enabled)
+- `POST /api/v1/auth/login/2fa-verify` — Complete 2FA login with 6-digit Authenticator code
+- `POST /api/v1/auth/otp/send` — Request a 6-digit OTP code to email or phone
+- `POST /api/v1/auth/otp/login` — Sign in directly with 6-digit OTP code
+- `POST /api/v1/auth/forgot-password` — Request password reset code
+- `POST /api/v1/auth/reset-password` — Reset password using verification code
+- `GET /api/v1/auth/qr/generate` — Generate real-time Web QR Login session
+- `GET /api/v1/auth/qr/status/{sessionToken}` — Poll status of QR Login session
+- `POST /api/v1/auth/qr/approve` — Authorize a QR Login session from mobile/client
+- `GET /api/v1/auth/2fa/setup` — Generate TOTP secret & QR code for Google/MS Authenticator (Protected)
+- `POST /api/v1/auth/2fa/enable` — Verify code and activate 2FA (Protected)
+- `POST /api/v1/auth/2fa/disable` — Deactivate 2FA (Protected)
+
+### User Management (Protected)
 - `GET /api/v1/test-users`
 - `GET /api/v1/test-users/{userId}`
 - `GET /api/v1/test-users/email/{email}`
@@ -116,10 +132,11 @@ Endpoints:
 
 ## Security model
 
-- Public endpoints: register and login
-- All other endpoints require JWT authentication
-- Passwords are encoded with BCrypt
-- JWT secret and TTL are configured in `backend/src/main/resources/application.properties`
+- Public endpoints: register, login, 2fa-verify, otp, forgot-password, reset-password, qr login
+- Protected endpoints require Bearer JWT authentication header
+- Passwords are encrypted with BCrypt
+- TOTP 2FA uses HMAC-SHA1 RFC 6238 standard algorithm
+- Gmail SMTP credentials configurable via environment variables (`GMAIL_USERNAME`, `GMAIL_APP_PASSWORD`, `MAIL_ENABLED`)
 
 ## Environment configuration
 

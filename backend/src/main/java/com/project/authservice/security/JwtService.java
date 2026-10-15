@@ -76,6 +76,22 @@ public class JwtService {
                 .compact();
     }
 
+    public String generateTempToken(User user) {
+        Instant now = Instant.now();
+        return Jwts.builder()
+                .setId(UUID.randomUUID().toString())
+                .setSubject(user.getId().toString())
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(now.plusSeconds(300)))
+                .setIssuer(issuer)
+                .addClaims(Map.of(
+                        "email", user.getEmail(),
+                        "typ", "2fa_temp"
+                ))
+                .signWith(secretKey, SignatureAlgorithm.HS512)
+                .compact();
+    }
+
     public Jws<Claims> parse(String token) {
         return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
     }
@@ -100,7 +116,14 @@ public class JwtService {
     }
     public List<String> getRoles(String token) {
         Claims claims = parse(token).getBody();
-        return (List<String>) claims.get("role");
+        Object rolesObj = claims.get("role");
+        if (rolesObj instanceof List<?> list) {
+            return list.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .toList();
+        }
+        return List.of();
     }
 
     public String getEmail(String token) {

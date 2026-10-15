@@ -1,6 +1,7 @@
 package com.project.authservice.service;
 
 import com.project.authservice.Exception.ResourceNotFoundException;
+import com.project.authservice.dto.LoginResponse;
 import com.project.authservice.dto.UserDto;
 import com.project.authservice.entity.Provider;
 import com.project.authservice.entity.User;
@@ -152,11 +153,11 @@ class AuthServiceImpTest {
         when(jwtService.generateAccessToken(testUser)).thenReturn("mockAccessToken");
         when(jwtService.generateRefreshToken(eq(testUser), anyString())).thenReturn("mockRefreshToken");
 
-        Map<String, String> response = authService.login(testUserDto);
+        LoginResponse response = authService.login(testUserDto);
 
         assertNotNull(response);
-        assertEquals("mockAccessToken", response.get("accessToken"));
-        assertEquals("mockRefreshToken", response.get("refreshToken"));
-        assertEquals("Login successful", response.get("message"));
+        assertEquals("mockAccessToken", response.getAccessToken());
+        assertEquals("mockRefreshToken", response.getRefreshToken());
+        assertEquals("Login successful", response.getMessage());
     }
 }

@@ -38,6 +38,13 @@ public class User implements UserDetails {
     private Provider provider=Provider.LOCAL;
 
     @Builder.Default
+    private boolean twoFactorEnabled = false;
+
+    private String twoFactorSecret;
+
+    private String phoneNumber;
+
+    @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "roles",joinColumns = @JoinColumn(name = "user_id"),inverseJoinColumns =@JoinColumn(name = "role_id"))
     private Set<Role> roles=new HashSet<>();

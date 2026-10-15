@@ -3,6 +3,7 @@ package com.project.authservice.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.authservice.Exception.GlobalExceptionHandler;
 import com.project.authservice.Exception.ResourceNotFoundException;
+import com.project.authservice.dto.LoginResponse;
 import com.project.authservice.dto.UserDto;
 import com.project.authservice.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,13 +90,14 @@ class AuthControllerTest {
                 .password("password123")
                 .build();
 
-        Map<String, String> responseMap = Map.of(
-                "accessToken", "sample.access.token",
-                "refreshToken", "sample.refresh.token",
-                "message", "Login successful"
-        );
+        LoginResponse loginResponse = LoginResponse.builder()
+                .accessToken("sample.access.token")
+                .refreshToken("sample.refresh.token")
+                .message("Login successful")
+                .twoFactorRequired(false)
+                .build();
 
-        when(authService.login(any(UserDto.class))).thenReturn(responseMap);
+        when(authService.login(any(UserDto.class))).thenReturn(loginResponse);
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
