@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { MantineProvider, createTheme } from '@mantine/core'
-import { Notifications } from '@mantine/notifications'
+import { MantineProvider, createTheme, Box } from '@mantine/core'
+import { Notifications, notifications } from '@mantine/notifications'
 import {
   IconServer,
   IconServerOff,
@@ -27,10 +27,10 @@ const mantineTheme = createTheme({
 })
 
 export default function App() {
-  // Current tab: 'login' | 'register' | 'profile'
-  const [activeTab, setActiveTab] = useState('login')
+  // Current tab: 'login' | 'register' | 'profile' | 'forgot'
+  const [activeTab, setActiveTab] = useState<'login' | 'register' | 'profile' | 'forgot'>('login')
   // Authenticated user session
-  const [authSession, setAuthSession] = useState(null)
+  const [authSession, setAuthSession] = useState<any>(null)
   // Backend connection status
   const [backendOnline, setBackendOnline] = useState(false)
 
@@ -42,9 +42,15 @@ export default function App() {
     return () => clearInterval(interval)
   }, [])
 
-  const handleLoginSuccess = (session) => {
+  const handleLoginSuccess = (session: any) => {
     setAuthSession(session)
     setActiveTab('profile')
+    notifications.show({
+      title: 'Authentication Successful',
+      message: 'Demo Token issued! Redirecting to AI Engineering from Scratch in 5 seconds...',
+      color: 'blue',
+      autoClose: 5000,
+    })
   }
 
   const handleRegisterSuccess = () => {
@@ -59,7 +65,7 @@ export default function App() {
   return (
     <MantineProvider theme={mantineTheme}>
       <Notifications position="top-right" />
-      <div
+      <Box
         style={{
           minHeight: '100vh',
           backgroundColor: '#f6f8fb',
@@ -80,7 +86,7 @@ export default function App() {
             zIndex: 50,
           }}
         >
-          <div
+          <Box
             style={{
               maxWidth: 1240,
               margin: '0 auto',
@@ -91,10 +97,10 @@ export default function App() {
             }}
           >
             {/* Brand Logo & Name */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div className="tech-logo-box">R&amp;D</div>
-              <div>
-                <div
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <Box className="tech-logo-box">R&amp;D</Box>
+              <Box>
+                <Box
                   style={{
                     fontFamily: 'var(--font-heading)',
                     fontWeight: 800,
@@ -110,23 +116,76 @@ export default function App() {
                   <span className="tech-version-tag" style={{ fontSize: '0.68rem', padding: '1px 6px', background: '#f1f5f9', borderRadius: 4 }}>
                     v 1.0.0
                   </span>
-                </div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#64748b' }}>
+                </Box>
+                <Box style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#64748b' }}>
                   RESEARCH &amp; DEVELOPMENT &bull; AUTH SERVICE
-                </div>
-              </div>
-            </div>
-          </div>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Backend Connectivity Status & Links */}
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Box
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 10px',
+                  borderRadius: 20,
+                  backgroundColor: backendOnline ? '#ecfdf5' : '#fffbeb',
+                  border: `1px solid ${backendOnline ? '#a7f3d0' : '#fde68a'}`,
+                  fontSize: '0.72rem',
+                  fontFamily: 'var(--font-mono)',
+                  color: backendOnline ? '#065f46' : '#92400e',
+                }}
+              >
+                {backendOnline ? (
+                  <>
+                    <IconServer size={14} color="#059669" />
+                    <span>SPRING API ONLINE (8090)</span>
+                  </>
+                ) : (
+                  <>
+                    <IconServerOff size={14} color="#d97706" />
+                    <span>SIMULATOR MODE (ACTIVE)</span>
+                  </>
+                )}
+              </Box>
+
+              <a
+                href="https://github.com"
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '5px 12px',
+                  borderRadius: 8,
+                  border: '1px solid #e2e8f0',
+                  color: '#334155',
+                  textDecoration: 'none',
+                  fontSize: '0.76rem',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 600,
+                  backgroundColor: '#ffffff',
+                }}
+              >
+                <IconBrandGithub size={15} />
+                <span>GITHUB</span>
+              </a>
+            </Box>
+          </Box>
         </header>
 
         {/* Main Website Page Content */}
         <main style={{ flex: 1, padding: '40px 24px', display: 'flex', alignItems: 'center' }}>
-          <div className="website-container">
+          <Box className="website-container">
             {/* Left Column: Brand Hero & 3D Isometric Showcase */}
-            <div className="website-hero-panel">
-              <div className="tech-kicker" style={{ marginBottom: 12 }}>
+            <Box className="website-hero-panel">
+              <Box className="tech-kicker" style={{ marginBottom: 12 }}>
                 00 / INTELLIGENT WORKSPACE
-              </div>
+              </Box>
 
               <h1
                 className="tech-headline"
@@ -154,7 +213,7 @@ export default function App() {
               </p>
 
               {/* Feature Tags */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 28 }}>
+              <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 28 }}>
                 <span className="feature-pill">
                   <IconShieldLock size={15} color="#2563eb" />
                   JWT HS-512 SECURE
@@ -167,11 +226,11 @@ export default function App() {
                   <IconCpu size={15} color="#2563eb" />
                   SPRING BOOT 3 + REST
                 </span>
-              </div>
+              </Box>
 
               {/* Technical Showcase Card with Isometric Cube */}
-              <div className="hero-graphic-card">
-                <div>
+              <Box className="hero-graphic-card">
+                <Box>
                   <span
                     style={{
                       fontFamily: 'var(--font-mono)',
@@ -186,7 +245,7 @@ export default function App() {
                   >
                     ARCHITECTURE MATRIX
                   </span>
-                  <div
+                  <Box
                     style={{
                       fontFamily: 'var(--font-heading)',
                       fontSize: '1.15rem',
@@ -195,16 +254,16 @@ export default function App() {
                     }}
                   >
                     TIERED SECURITY STACK<span className="tech-headline-dot">.</span>
-                  </div>
+                  </Box>
                   <p style={{ fontSize: '0.82rem', color: '#64748b', marginTop: 4, maxWidth: 280 }}>
                     Modular token authentication with stateless session verification and role mapping.
                   </p>
-                </div>
+                </Box>
                 <IsometricCube size={120} />
-              </div>
+              </Box>
 
               {/* Reference Banner Card */}
-              <div
+              <Box
                 className="tech-callout-card"
                 style={{
                   marginTop: 20,
@@ -212,7 +271,7 @@ export default function App() {
                   border: '1px solid #e2e8f0',
                 }}
               >
-                <div
+                <Box
                   style={{
                     fontFamily: 'var(--font-mono)',
                     fontSize: '0.72rem',
@@ -226,8 +285,8 @@ export default function App() {
                   }}
                 >
                   LEARN<br />BUILD<br />GROW
-                </div>
-                <div style={{ flex: 1 }}>
+                </Box>
+                <Box style={{ flex: 1 }}>
                   <span
                     style={{
                       fontFamily: 'var(--font-mono)',
@@ -240,16 +299,16 @@ export default function App() {
                   >
                     A MODERN PLATFORM FOR R&amp;D ENGINEERS.
                   </span>
-                </div>
-              </div>
-            </div>
+                </Box>
+              </Box>
+            </Box>
 
             {/* Right Column: Interactive Authentication Card */}
-            <div className="website-auth-panel">
-              <div className="website-auth-card">
+            <Box className="website-auth-panel">
+              <Box className="website-auth-card">
                 {/* Internal Tab Selector */}
                 {activeTab !== 'profile' && (
-                  <div
+                  <Box
                     style={{
                       display: 'flex',
                       backgroundColor: '#f1f5f9',
@@ -272,7 +331,7 @@ export default function App() {
                       <IconUserPlus size={15} />
                       <span>CREATE ACCOUNT</span>
                     </button>
-                  </div>
+                  </Box>
                 )}
 
                 {/* View Container */}
@@ -294,9 +353,9 @@ export default function App() {
                     onLoginSuccess={handleLoginSuccess}
                   />
                 )}
-              </div>
-            </div>
-          </div>
+              </Box>
+            </Box>
+          </Box>
         </main>
 
         {/* Website Page Footer */}
@@ -308,7 +367,7 @@ export default function App() {
             padding: '20px 28px',
           }}
         >
-          <div
+          <Box
             style={{
               maxWidth: 1240,
               margin: '0 auto',
@@ -322,15 +381,15 @@ export default function App() {
               color: '#64748b',
             }}
           >
-            <div>
+            <Box>
               &copy; 2026 R&amp;D PLATFORM &bull; ENTERPRISE AUTHENTICATION SERVICE
-            </div>
-            <div>
+            </Box>
+            <Box>
               SPRING SECURITY 6 &bull; JWT HS-512 &bull; REACT + MANTINE UI
-            </div>
-          </div>
+            </Box>
+          </Box>
         </footer>
-      </div>
+      </Box>
     </MantineProvider>
   )
 }

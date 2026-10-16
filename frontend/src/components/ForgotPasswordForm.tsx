@@ -3,6 +3,7 @@ import {
   TextInput,
   PasswordInput,
   Anchor,
+  Box,
 } from '@mantine/core'
 import {
   IconMail,
@@ -15,7 +16,7 @@ import {
 } from '@tabler/icons-react'
 import { forgotPasswordApi, resetPasswordApi } from '../services/authApi'
 
-export function ForgotPasswordForm({ onNavigateLogin }) {
+export function ForgotPasswordForm({ onNavigateLogin }: { onNavigateLogin: () => void }) {
   const [step, setStep] = useState(1) // 1: Request Code, 2: Enter Code & New Password, 3: Success
   const [email, setEmail] = useState('')
   const [resetCode, setResetCode] = useState('')
@@ -25,7 +26,7 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
 
-  const handleRequestCode = async (e) => {
+  const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSuccessMsg('')
@@ -40,14 +41,15 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
       const res = await forgotPasswordApi({ email })
       setSuccessMsg(res.data?.message || 'Verification code sent to your email!')
       setStep(2)
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || 'Failed to send reset code')
     } finally {
       setLoading(false)
     }
+
   }
 
-  const handleResetPassword = async (e) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSuccessMsg('')
@@ -74,7 +76,7 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
       const res = await resetPasswordApi({ email, resetCode, newPassword })
       setSuccessMsg(res.data?.message || 'Password successfully updated!')
       setStep(3)
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || 'Failed to reset password')
     } finally {
       setLoading(false)
@@ -82,10 +84,10 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
   }
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Box className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div className="tech-logo-box">R&amp;D</div>
+      <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <Box className="tech-logo-box">R&amp;D</Box>
         <button
           onClick={onNavigateLogin}
           style={{
@@ -104,11 +106,11 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
           <IconArrowLeft size={14} />
           BACK TO LOGIN
         </button>
-      </div>
+      </Box>
 
-      <div className="tech-kicker" style={{ marginBottom: 8 }}>
+      <Box className="tech-kicker" style={{ marginBottom: 8 }}>
         PASSWORD RECOVERY &bull; GMAIL SECURED
-      </div>
+      </Box>
       <h1 className="tech-headline">
         RESET YOUR <br />
         PASSWORD<span className="tech-headline-dot">.</span>
@@ -121,7 +123,7 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
 
       {/* Error alert */}
       {error && (
-        <div
+        <Box
           style={{
             backgroundColor: '#fef2f2',
             border: '1px solid #fecaca',
@@ -137,12 +139,12 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
         >
           <IconAlertCircle size={16} />
           <span>{error}</span>
-        </div>
+        </Box>
       )}
 
       {/* Success alert */}
       {successMsg && (
-        <div
+        <Box
           style={{
             backgroundColor: '#f0fdf4',
             border: '1px solid #bbf7d0',
@@ -158,13 +160,13 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
         >
           <IconCheck size={16} />
           <span>{successMsg}</span>
-        </div>
+        </Box>
       )}
 
       {/* Step 1: Request Code */}
       {step === 1 && (
         <form onSubmit={handleRequestCode} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div>
+          <Box>
             <label className="tech-mono-label" htmlFor="forgot-email">
               ACCOUNT EMAIL
             </label>
@@ -184,7 +186,7 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
                 },
               }}
             />
-          </div>
+          </Box>
 
           <button
             type="submit"
@@ -205,7 +207,7 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
       {/* Step 2: Enter Code & New Password */}
       {step === 2 && (
         <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div>
+          <Box>
             <label className="tech-mono-label" htmlFor="reset-code">
               6-DIGIT VERIFICATION CODE
             </label>
@@ -228,9 +230,9 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
                 },
               }}
             />
-          </div>
+          </Box>
 
-          <div>
+          <Box>
             <label className="tech-mono-label" htmlFor="new-password">
               NEW PASSWORD
             </label>
@@ -249,9 +251,9 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
                 },
               }}
             />
-          </div>
+          </Box>
 
-          <div>
+          <Box>
             <label className="tech-mono-label" htmlFor="confirm-password">
               CONFIRM NEW PASSWORD
             </label>
@@ -270,7 +272,7 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
                 },
               }}
             />
-          </div>
+          </Box>
 
           <button
             type="submit"
@@ -290,8 +292,8 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
 
       {/* Step 3: Success */}
       {step === 3 && (
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <div
+        <Box style={{ marginTop: 24, textAlign: 'center' }}>
+          <Box
             style={{
               width: 56,
               height: 56,
@@ -305,7 +307,7 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
             }}
           >
             <IconCheck size={32} />
-          </div>
+          </Box>
           <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>
             Password Reset Successful!
           </h2>
@@ -320,11 +322,11 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
             <span>PROCEED TO SIGN IN</span>
             <IconArrowRight size={18} />
           </button>
-        </div>
+        </Box>
       )}
 
       {/* Footer Return Link */}
-      <div style={{ marginTop: 'auto', paddingTop: 24, textAlign: 'center' }}>
+      <Box style={{ marginTop: 'auto', paddingTop: 24, textAlign: 'center' }}>
         <Anchor
           href="#login"
           onClick={(e) => {
@@ -340,7 +342,7 @@ export function ForgotPasswordForm({ onNavigateLogin }) {
         >
           Remember your password? <span style={{ color: '#2563eb', fontWeight: 700 }}>SIGN IN</span>
         </Anchor>
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }

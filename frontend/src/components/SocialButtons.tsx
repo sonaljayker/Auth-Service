@@ -1,6 +1,6 @@
 import React from 'react'
 
-export function GoogleIcon({ size = 18 }) {
+export function GoogleIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24">
       <path
@@ -23,7 +23,7 @@ export function GoogleIcon({ size = 18 }) {
   )
 }
 
-export function GitHubIcon({ size = 18 }) {
+export function GitHubIcon({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
       <path

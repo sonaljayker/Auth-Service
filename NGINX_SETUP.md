@@ -14,7 +14,9 @@ Nginx is configured as a reverse proxy in front of the Spring Boot application. 
 ## Architecture
 
 ```
-Client → Nginx (Port 80/443) → Spring Boot App (Port 8080) → PostgreSQL
+Client → Nginx (Port 80/443)
+           ├── /app  → Frontend React + Mantine UI (Port 80)
+           └── /api  → Spring Boot Backend & Swagger (Port 8090) → PostgreSQL
 ```
 
 ## Quick Start
@@ -22,21 +24,26 @@ Client → Nginx (Port 80/443) → Spring Boot App (Port 8080) → PostgreSQL
 Start all services including Nginx:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 Access the application:
-- **API**: http://localhost/api/v1/auth/register
+- **Frontend App**: http://localhost/app
+- **Backend Swagger UI**: http://localhost/api
+- **API Endpoints**: http://localhost/api/v1/auth/login
 - **Health**: http://localhost/health
-- **Swagger UI**: http://localhost/swagger-ui/ (if enabled)
 
 ## Nginx Configuration Details
 
 ### Upstream Configuration
 
 ```nginx
-upstream auth_service {
-    server app:8080;
+upstream auth_backend {
+    server app:8090;
+}
+
+upstream auth_frontend {
+    server frontend:80;
 }
 ```
 
@@ -62,33 +69,41 @@ upstream auth_service {
 ### Location Blocks
 
 #### 1. Root Path `/`
-Routes all requests to the Spring Boot application:
+Redirects root requests to the Frontend application:
 ```nginx
-location / {
-    proxy_pass http://auth_service;
+location = / {
+    return 301 /app/;
+}
+```
+
+#### 2. Frontend Application `/app/`
+Routes all frontend requests to the React application container:
+```nginx
+location /app/ {
+    proxy_pass http://auth_frontend/;
     # ... proxy settings
 }
 ```
 
-#### 2. Health Check `/health`
+#### 3. Backend Swagger UI & API Endpoints `/api`
+Routes requests to the Spring Boot application (serving Swagger UI at `/api` and REST APIs at `/api/v1/...`):
+```nginx
+location /api {
+    proxy_pass http://auth_backend;
+    # ... proxy settings
+}
+```
+
+#### 4. Health Check `/health`
 Dedicated endpoint for health monitoring:
 ```nginx
 location /health {
-    proxy_pass http://auth_service/actuator/health;
-    access_log off;  # Disable logging for health checks
+    proxy_pass http://auth_backend/actuator/health;
+    access_log off;
 }
 ```
 
-#### 3. API Endpoints `/api/`
-Specific routing for all API calls:
-```nginx
-location /api/ {
-    proxy_pass http://auth_service;
-    # ... proxy settings
-}
-```
-
-#### 4. Swagger/OpenAPI `/swagger-ui/` and `/v3/api-docs`
+#### 5. Swagger/OpenAPI `/swagger-ui/` and `/v3/api-docs`
 Routes API documentation requests to the Spring Boot app
 
 #### 5. Security `/`

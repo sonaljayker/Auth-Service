@@ -2,9 +2,7 @@ import React, { useState } from 'react'
 import {
   TextInput,
   PasswordInput,
-  Anchor,
-  Text,
-  Divider,
+  Box,
 } from '@mantine/core'
 import {
   IconUser,
@@ -19,20 +17,28 @@ import { IsometricCube } from './IsometricCube'
 import { OAuthModal } from './OAuthModal'
 import { registerApi } from '../services/authApi'
 
-export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSuccess }) {
+export function RegisterForm({
+  onNavigateLogin,
+  onRegisterSuccess,
+  onLoginSuccess,
+}: {
+  onNavigateLogin: () => void
+  onRegisterSuccess?: (res?: any) => void
+  onLoginSuccess?: (session?: any) => void
+}) {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [successInfo, setSuccessInfo] = useState(null)
+  const [successInfo, setSuccessInfo] = useState<string | null>(null)
 
   // OAuth SSO state
   const [oauthModalOpen, setOauthModalOpen] = useState(false)
   const [oauthProvider, setOauthProvider] = useState('GOOGLE')
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSuccessInfo(null)
@@ -67,7 +73,7 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
           onRegisterSuccess(result)
         }, 1200)
       }
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
@@ -75,19 +81,19 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
   }
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Box className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Top Header: Logo + Version */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div className="tech-logo-box">R&amp;D</div>
+      <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <Box className="tech-logo-box">R&amp;D</Box>
         <span className="tech-version-tag">v 1.0.0</span>
-      </div>
+      </Box>
 
       {/* Kicker + Headline with Isometric Cube */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
-        <div style={{ flex: 1, paddingRight: 10 }}>
-          <div className="tech-kicker" style={{ marginBottom: 8 }}>
+      <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+        <Box style={{ flex: 1, paddingRight: 10 }}>
+          <Box className="tech-kicker" style={{ marginBottom: 8 }}>
             02 / GET STARTED
-          </div>
+          </Box>
           <h1 className="tech-headline">
             CREATE AN <br />
             ACCOUNT<span className="tech-headline-dot">.</span>
@@ -95,17 +101,17 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
           <p className="tech-subtitle" style={{ marginTop: 8 }}>
             Join our R&amp;D engineering workspace and start building.
           </p>
-        </div>
+        </Box>
 
         {/* Isometric Cube Graphic */}
-        <div style={{ flexShrink: 0, marginTop: -6 }}>
+        <Box style={{ flexShrink: 0, marginTop: -6 }}>
           <IsometricCube size={96} />
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Error / Alert feedback */}
       {error && (
-        <div
+        <Box
           style={{
             backgroundColor: '#fef2f2',
             border: '1px solid #fecaca',
@@ -121,11 +127,11 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
         >
           <IconAlertCircle size={16} />
           <span>{error}</span>
-        </div>
+        </Box>
       )}
 
       {successInfo && (
-        <div
+        <Box
           style={{
             backgroundColor: '#f0fdf4',
             border: '1px solid #bbf7d0',
@@ -141,13 +147,13 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
         >
           <IconCheck size={16} />
           <span>{successInfo}</span>
-        </div>
+        </Box>
       )}
 
       {/* Registration Form */}
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {/* USERNAME Field */}
-        <div>
+        <Box>
           <label className="tech-mono-label" htmlFor="reg-username">
             USERNAME
           </label>
@@ -166,10 +172,10 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
               },
             }}
           />
-        </div>
+        </Box>
 
         {/* EMAIL Field */}
-        <div>
+        <Box>
           <label className="tech-mono-label" htmlFor="reg-email">
             WORK EMAIL
           </label>
@@ -189,10 +195,10 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
               },
             }}
           />
-        </div>
+        </Box>
 
         {/* PASSWORD Field */}
-        <div>
+        <Box>
           <label className="tech-mono-label" htmlFor="reg-password">
             PASSWORD
           </label>
@@ -212,10 +218,10 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
               },
             }}
           />
-        </div>
+        </Box>
 
         {/* CONFIRM PASSWORD Field */}
-        <div>
+        <Box>
           <label className="tech-mono-label" htmlFor="reg-confirm-password">
             CONFIRM PASSWORD
           </label>
@@ -235,7 +241,7 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
               },
             }}
           />
-        </div>
+        </Box>
 
         {/* Submit Button */}
         <button
@@ -257,7 +263,7 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
       </form>
 
       {/* Divider OR */}
-      <div
+      <Box
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -265,7 +271,7 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
           margin: '16px 0',
         }}
       >
-        <div style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
+        <Box style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
         <span
           style={{
             fontFamily: 'var(--font-mono)',
@@ -277,11 +283,11 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
         >
           OR
         </span>
-        <div style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
-      </div>
+        <Box style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
+      </Box>
 
       {/* Social SSO Buttons */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+      <Box style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
         <button
           type="button"
           className="tech-btn-social"
@@ -306,19 +312,19 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
           <GitHubIcon size={18} />
           <span>GitHub</span>
         </button>
-      </div>
+      </Box>
 
       {/* Bottom Callout / Footer Card -> Navigate back to Login */}
-      <div style={{ marginTop: 'auto' }}>
-        <div
+      <Box style={{ marginTop: 'auto' }}>
+        <Box
           className="tech-callout-card tech-callout-interactive"
           onClick={onNavigateLogin}
           role="button"
           tabIndex={0}
           id="nav-to-login-btn"
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <div>
+          <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <Box>
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
@@ -356,11 +362,11 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
               >
                 Access your workspace and continue building.
               </p>
-            </div>
+            </Box>
             <IconArrowRight size={20} color="#2563eb" style={{ flexShrink: 0, marginLeft: 12 }} />
-          </div>
-        </div>
-      </div>
+          </Box>
+        </Box>
+      </Box>
 
       {/* OAuth SSO Modal */}
       <OAuthModal
@@ -375,6 +381,6 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
           }
         }}
       />
-    </div>
+    </Box>
   )
 }
