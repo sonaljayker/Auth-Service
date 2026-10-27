@@ -309,7 +309,7 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
       </div>
 
       {/* Bottom Callout / Footer Card -> Navigate back to Login */}
-      <div>
+      <div style={{ marginTop: 'auto' }}>
         <div
           className="tech-callout-card tech-callout-interactive"
           onClick={onNavigateLogin}

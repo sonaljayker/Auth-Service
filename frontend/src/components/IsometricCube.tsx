@@ -1,6 +1,6 @@
 import React from 'react'
 
-export function IsometricCube({ size = 110, className = '' }) {
+export function IsometricCube({ size = 110, className = '' }: { size?: number; className?: string }) {
   return (
     <svg
       width={size}

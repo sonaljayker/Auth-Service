@@ -1,17 +1,18 @@
 import React from 'react'
+import { Box } from '@mantine/core'
 
 export function PhoneStatusBar() {
   return (
-    <div style={{ position: 'relative', width: '100%', userSelect: 'none' }}>
+    <Box style={{ position: 'relative', width: '100%', userSelect: 'none' }}>
       {/* Top Phone Sensor Island */}
-      <div className="phone-island" />
+      <Box className="phone-island" />
 
       {/* Clock and Status Icons */}
-      <div className="phone-status-bar" style={{ marginTop: '-20px', paddingBottom: '12px' }}>
+      <Box className="phone-status-bar" style={{ marginTop: '-20px', paddingBottom: '12px' }}>
         <span style={{ fontSize: '0.85rem', fontWeight: 600, letterSpacing: '-0.01em' }}>
           9:41
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Box style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {/* Signal Bars */}
           <svg width="17" height="11" viewBox="0 0 17 11" fill="none">
             <rect x="0.5" y="8" width="2.5" height="3" rx="0.5" fill="#111827" />
@@ -59,8 +60,8 @@ export function PhoneStatusBar() {
               strokeLinecap="round"
             />
           </svg>
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   )
 }

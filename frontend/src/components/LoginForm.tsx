@@ -258,6 +258,7 @@ export function LoginForm({
       {/* Top Header: Logo + Version */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div className="tech-logo-box">R&amp;D</div>
+        <span className="tech-version-tag">MNC ENTERPRISE AUTH</span>
       </div>
 
       {/* Headline & Graphic */}
@@ -293,10 +294,10 @@ export function LoginForm({
             {twoFactorChallenge
               ? 'Enter the 6-digit code from Google/Microsoft Authenticator.'
               : loginMethod === 'otp'
-                ? 'Instant passwordless sign in via secure Gmail OTP verification code.'
-                : loginMethod === 'qr'
-                  ? 'Scan with your authenticator or authorized mobile device.'
-                  : 'Sign in to access your secure enterprise compute workspace.'}
+              ? 'Instant passwordless sign in via secure Gmail OTP verification code.'
+              : loginMethod === 'qr'
+              ? 'Scan with your authenticator or authorized mobile device.'
+              : 'Sign in to access your secure enterprise compute workspace.'}
           </p>
         </div>
 
@@ -797,7 +798,7 @@ export function LoginForm({
 
       {/* Bottom Switcher: Create an account */}
       {!twoFactorChallenge && (
-        <div style={{  paddingTop: 12 }}>
+        <div style={{ marginTop: 'auto', paddingTop: 12 }}>
           <div
             className="tech-callout-card tech-callout-interactive"
             onClick={onNavigateRegister}
