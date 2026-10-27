@@ -27,6 +27,7 @@ services:
       dockerfile: Dockerfile
     container_name: auth-service-app
     environment:
+      SERVER_PORT: ${SERVER_PORT:-8080}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/auth_service
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
@@ -90,10 +91,9 @@ services:
       dockerfile: Dockerfile
     container_name: auth-service-app-dev
     environment:
+      SERVER_PORT: 8080
       SPRING_PROFILES_ACTIVE: dev
       SECURITY_JWT_SECRET: change-me-dev-very-long-and-secure-secret-key-for-512-bit-hs512-algorithm
-    volumes:
-      - ./backend:/app
     ports:
       - "8090:8090"
     depends_on:

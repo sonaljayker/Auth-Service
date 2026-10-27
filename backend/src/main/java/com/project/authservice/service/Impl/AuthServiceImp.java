@@ -98,7 +98,7 @@ public class AuthServiceImp implements AuthService {
                 .refreshToken(refreshToken)
                 .twoFactorRequired(false)
                 .message("Login successful")
-                .user(modelMapper.map(user, UserDto.class))
+                .user(modelMapper != null ? modelMapper.map(user, UserDto.class) : null)
                 .build();
     }
 
@@ -134,7 +134,7 @@ public class AuthServiceImp implements AuthService {
                 .refreshToken(refreshToken)
                 .twoFactorRequired(false)
                 .message("Two-factor verification successful")
-                .user(modelMapper.map(user, UserDto.class))
+                .user(modelMapper != null ? modelMapper.map(user, UserDto.class) : null)
                 .build();
     }
 
@@ -184,7 +184,7 @@ public class AuthServiceImp implements AuthService {
                 .refreshToken(refreshToken)
                 .twoFactorRequired(false)
                 .message("OTP login successful")
-                .user(modelMapper.map(user, UserDto.class))
+                .user(modelMapper != null ? modelMapper.map(user, UserDto.class) : null)
                 .build();
     }
 

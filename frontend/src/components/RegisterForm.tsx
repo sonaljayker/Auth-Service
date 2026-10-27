@@ -2,7 +2,9 @@ import React, { useState } from 'react'
 import {
   TextInput,
   PasswordInput,
-  Box,
+  Anchor,
+  Text,
+  Divider,
 } from '@mantine/core'
 import {
   IconUser,
@@ -17,28 +19,20 @@ import { IsometricCube } from './IsometricCube'
 import { OAuthModal } from './OAuthModal'
 import { registerApi } from '../services/authApi'
 
-export function RegisterForm({
-  onNavigateLogin,
-  onRegisterSuccess,
-  onLoginSuccess,
-}: {
-  onNavigateLogin: () => void
-  onRegisterSuccess?: (res?: any) => void
-  onLoginSuccess?: (session?: any) => void
-}) {
+export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSuccess }) {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [successInfo, setSuccessInfo] = useState<string | null>(null)
+  const [successInfo, setSuccessInfo] = useState(null)
 
   // OAuth SSO state
   const [oauthModalOpen, setOauthModalOpen] = useState(false)
   const [oauthProvider, setOauthProvider] = useState('GOOGLE')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSuccessInfo(null)
@@ -73,7 +67,7 @@ export function RegisterForm({
           onRegisterSuccess(result)
         }, 1200)
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
@@ -81,19 +75,19 @@ export function RegisterForm({
   }
 
   return (
-    <Box className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Top Header: Logo + Version */}
-      <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Box className="tech-logo-box">R&amp;D</Box>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div className="tech-logo-box">R&amp;D</div>
         <span className="tech-version-tag">v 1.0.0</span>
-      </Box>
+      </div>
 
       {/* Kicker + Headline with Isometric Cube */}
-      <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
-        <Box style={{ flex: 1, paddingRight: 10 }}>
-          <Box className="tech-kicker" style={{ marginBottom: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
+        <div style={{ flex: 1, paddingRight: 10 }}>
+          <div className="tech-kicker" style={{ marginBottom: 8 }}>
             02 / GET STARTED
-          </Box>
+          </div>
           <h1 className="tech-headline">
             CREATE AN <br />
             ACCOUNT<span className="tech-headline-dot">.</span>
@@ -101,17 +95,17 @@ export function RegisterForm({
           <p className="tech-subtitle" style={{ marginTop: 8 }}>
             Join our R&amp;D engineering workspace and start building.
           </p>
-        </Box>
+        </div>
 
         {/* Isometric Cube Graphic */}
-        <Box style={{ flexShrink: 0, marginTop: -6 }}>
+        <div style={{ flexShrink: 0, marginTop: -6 }}>
           <IsometricCube size={96} />
-        </Box>
-      </Box>
+        </div>
+      </div>
 
       {/* Error / Alert feedback */}
       {error && (
-        <Box
+        <div
           style={{
             backgroundColor: '#fef2f2',
             border: '1px solid #fecaca',
@@ -127,11 +121,11 @@ export function RegisterForm({
         >
           <IconAlertCircle size={16} />
           <span>{error}</span>
-        </Box>
+        </div>
       )}
 
       {successInfo && (
-        <Box
+        <div
           style={{
             backgroundColor: '#f0fdf4',
             border: '1px solid #bbf7d0',
@@ -147,13 +141,13 @@ export function RegisterForm({
         >
           <IconCheck size={16} />
           <span>{successInfo}</span>
-        </Box>
+        </div>
       )}
 
       {/* Registration Form */}
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {/* USERNAME Field */}
-        <Box>
+        <div>
           <label className="tech-mono-label" htmlFor="reg-username">
             USERNAME
           </label>
@@ -172,10 +166,10 @@ export function RegisterForm({
               },
             }}
           />
-        </Box>
+        </div>
 
         {/* EMAIL Field */}
-        <Box>
+        <div>
           <label className="tech-mono-label" htmlFor="reg-email">
             WORK EMAIL
           </label>
@@ -195,10 +189,10 @@ export function RegisterForm({
               },
             }}
           />
-        </Box>
+        </div>
 
         {/* PASSWORD Field */}
-        <Box>
+        <div>
           <label className="tech-mono-label" htmlFor="reg-password">
             PASSWORD
           </label>
@@ -218,10 +212,10 @@ export function RegisterForm({
               },
             }}
           />
-        </Box>
+        </div>
 
         {/* CONFIRM PASSWORD Field */}
-        <Box>
+        <div>
           <label className="tech-mono-label" htmlFor="reg-confirm-password">
             CONFIRM PASSWORD
           </label>
@@ -241,7 +235,7 @@ export function RegisterForm({
               },
             }}
           />
-        </Box>
+        </div>
 
         {/* Submit Button */}
         <button
@@ -263,7 +257,7 @@ export function RegisterForm({
       </form>
 
       {/* Divider OR */}
-      <Box
+      <div
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -271,7 +265,7 @@ export function RegisterForm({
           margin: '16px 0',
         }}
       >
-        <Box style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
+        <div style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
         <span
           style={{
             fontFamily: 'var(--font-mono)',
@@ -283,11 +277,11 @@ export function RegisterForm({
         >
           OR
         </span>
-        <Box style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
-      </Box>
+        <div style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
+      </div>
 
       {/* Social SSO Buttons */}
-      <Box style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
         <button
           type="button"
           className="tech-btn-social"
@@ -312,19 +306,19 @@ export function RegisterForm({
           <GitHubIcon size={18} />
           <span>GitHub</span>
         </button>
-      </Box>
+      </div>
 
       {/* Bottom Callout / Footer Card -> Navigate back to Login */}
-      <Box style={{ marginTop: 'auto' }}>
-        <Box
+      <div style={{ marginTop: 'auto' }}>
+        <div
           className="tech-callout-card tech-callout-interactive"
           onClick={onNavigateLogin}
           role="button"
           tabIndex={0}
           id="nav-to-login-btn"
         >
-          <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <Box>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div>
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
@@ -362,11 +356,11 @@ export function RegisterForm({
               >
                 Access your workspace and continue building.
               </p>
-            </Box>
+            </div>
             <IconArrowRight size={20} color="#2563eb" style={{ flexShrink: 0, marginLeft: 12 }} />
-          </Box>
-        </Box>
-      </Box>
+          </div>
+        </div>
+      </div>
 
       {/* OAuth SSO Modal */}
       <OAuthModal
@@ -381,6 +375,6 @@ export function RegisterForm({
           }
         }}
       />
-    </Box>
+    </div>
   )
 }

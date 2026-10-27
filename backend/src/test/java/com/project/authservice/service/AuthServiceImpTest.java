@@ -8,12 +8,16 @@ import com.project.authservice.entity.User;
 import com.project.authservice.repository.UserRepository;
 import com.project.authservice.security.JwtService;
 import com.project.authservice.service.Impl.AuthServiceImp;
+import com.project.authservice.service.OtpService;
+import com.project.authservice.service.TotpService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Map;
@@ -38,6 +42,15 @@ class AuthServiceImpTest {
 
     @Mock
     private JwtService jwtService;
+
+    @Mock
+    private TotpService totpService;
+
+    @Mock
+    private OtpService otpService;
+
+    @Spy
+    private ModelMapper modelMapper = new ModelMapper();
 
     @InjectMocks
     private AuthServiceImp authService;

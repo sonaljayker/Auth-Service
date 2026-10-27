@@ -3,7 +3,6 @@ import {
   TextInput,
   PasswordInput,
   Anchor,
-  Box,
 } from '@mantine/core'
 import {
   IconUser,
@@ -36,14 +35,9 @@ export function LoginForm({
   onNavigateForgot,
   onLoginSuccess,
   variant = 'with-cube',
-}: {
-  onNavigateRegister: () => void
-  onNavigateForgot?: () => void
-  onLoginSuccess?: (session: any) => void
-  variant?: 'with-cube' | 'compact'
 }) {
   // Login Tab: 'password' | 'otp' | 'qr'
-  const [loginMethod, setLoginMethod] = useState<'password' | 'otp' | 'qr'>('password')
+  const [loginMethod, setLoginMethod] = useState('password')
 
   // OAuth SSO state
   const [oauthModalOpen, setOauthModalOpen] = useState(false)
@@ -65,15 +59,15 @@ export function LoginForm({
   const [otpCountdown, setOtpCountdown] = useState(0)
 
   // QR Login state
-  const [qrSession, setQrSession] = useState<any>(null)
+  const [qrSession, setQrSession] = useState(null)
   const [qrLoading, setQrLoading] = useState(false)
   const [qrSimulating, setQrSimulating] = useState(false)
-  const pollTimerRef = useRef<any>(null)
+  const pollTimerRef = useRef(null)
 
   // Common form status
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [successInfo, setSuccessInfo] = useState<string | null>(null)
+  const [successInfo, setSuccessInfo] = useState(null)
 
   // Countdown timer for OTP
   useEffect(() => {
@@ -102,14 +96,14 @@ export function LoginForm({
       const res = await generateQrSessionApi()
       setQrSession(res.data)
       startQrPolling(res.data.sessionToken)
-    } catch (err: any) {
+    } catch (err) {
       setError('Failed to generate QR login session')
     } finally {
       setQrLoading(false)
     }
   }
 
-  const startQrPolling = (sessionToken: string) => {
+  const startQrPolling = (sessionToken) => {
     if (pollTimerRef.current) clearInterval(pollTimerRef.current)
     pollTimerRef.current = setInterval(async () => {
       try {
@@ -136,7 +130,7 @@ export function LoginForm({
   }
 
   // Handle Password Submit
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSuccessInfo(null)
@@ -166,7 +160,7 @@ export function LoginForm({
       if (onLoginSuccess) {
         setTimeout(() => onLoginSuccess(result), 600)
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Invalid email or password')
     } finally {
       setLoading(false)
@@ -174,7 +168,7 @@ export function LoginForm({
   }
 
   // Handle 2FA Challenge Submit
-  const handle2faSubmit = async (e: React.FormEvent) => {
+  const handle2faSubmit = async (e) => {
     e.preventDefault()
     setError('')
     if (!twoFactorCode || twoFactorCode.length !== 6) {
@@ -189,7 +183,7 @@ export function LoginForm({
       if (onLoginSuccess) {
         setTimeout(() => onLoginSuccess(result), 600)
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Invalid 2FA code')
     } finally {
       setLoading(false)
@@ -197,7 +191,7 @@ export function LoginForm({
   }
 
   // Handle Send OTP
-  const handleSendOtp = async (e?: React.FormEvent) => {
+  const handleSendOtp = async (e) => {
     if (e) e.preventDefault()
     setError('')
     if (!otpTarget) {
@@ -211,7 +205,7 @@ export function LoginForm({
       setOtpSent(true)
       setOtpCountdown(60)
       setSuccessInfo(res.data?.message || `One-time code sent to ${otpTarget}`)
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Failed to send OTP')
     } finally {
       setLoading(false)
@@ -219,7 +213,7 @@ export function LoginForm({
   }
 
   // Handle OTP Verify & Login
-  const handleOtpLogin = async (e: React.FormEvent) => {
+  const handleOtpLogin = async (e) => {
     e.preventDefault()
     setError('')
     if (!otpCode) {
@@ -234,7 +228,7 @@ export function LoginForm({
       if (onLoginSuccess) {
         setTimeout(() => onLoginSuccess(result), 600)
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Invalid verification code')
     } finally {
       setLoading(false)
@@ -252,7 +246,7 @@ export function LoginForm({
         password: 'password123',
       })
       setSuccessInfo('Simulated mobile approval complete! Auto-logging in...')
-    } catch (err: any) {
+    } catch (err) {
       setError('Could not simulate mobile approval: ' + err.message)
     } finally {
       setQrSimulating(false)
@@ -260,19 +254,19 @@ export function LoginForm({
   }
 
   return (
-    <Box className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Top Header: Logo + Version */}
-      <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <Box className="tech-logo-box">R&amp;D</Box>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div className="tech-logo-box">R&amp;D</div>
         <span className="tech-version-tag">MNC ENTERPRISE AUTH</span>
-      </Box>
+      </div>
 
       {/* Headline & Graphic */}
-      <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-        <Box style={{ flex: 1, paddingRight: variant === 'with-cube' ? 12 : 0 }}>
-          <Box className="tech-kicker" style={{ marginBottom: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div style={{ flex: 1, paddingRight: variant === 'with-cube' ? 12 : 0 }}>
+          <div className="tech-kicker" style={{ marginBottom: 6 }}>
             01 / ENTERPRISE SIGN IN
-          </Box>
+          </div>
           <h1 className="tech-headline">
             {twoFactorChallenge ? (
               <>
@@ -305,18 +299,18 @@ export function LoginForm({
               ? 'Scan with your authenticator or authorized mobile device.'
               : 'Sign in to access your secure enterprise compute workspace.'}
           </p>
-        </Box>
+        </div>
 
         {variant === 'with-cube' && !twoFactorChallenge && (
-          <Box style={{ flexShrink: 0, marginTop: -8 }}>
+          <div style={{ flexShrink: 0, marginTop: -8 }}>
             <IsometricCube size={95} />
-          </Box>
+          </div>
         )}
-      </Box>
+      </div>
 
       {/* Authentication Mode Switcher Pills (Only if not in 2FA challenge) */}
       {!twoFactorChallenge && (
-        <Box
+        <div
           style={{
             display: 'flex',
             backgroundColor: '#f1f5f9',
@@ -365,12 +359,12 @@ export function LoginForm({
             <IconQrcode size={14} />
             <span>SCAN QR</span>
           </button>
-        </Box>
+        </div>
       )}
 
       {/* Error Feedback */}
       {error && (
-        <Box
+        <div
           style={{
             backgroundColor: '#fef2f2',
             border: '1px solid #fecaca',
@@ -386,12 +380,12 @@ export function LoginForm({
         >
           <IconAlertCircle size={16} />
           <span>{error}</span>
-        </Box>
+        </div>
       )}
 
       {/* Success Feedback */}
       {successInfo && (
-        <Box
+        <div
           style={{
             backgroundColor: '#f0fdf4',
             border: '1px solid #bbf7d0',
@@ -407,23 +401,23 @@ export function LoginForm({
         >
           <IconCheck size={16} />
           <span>{successInfo}</span>
-        </Box>
+        </div>
       )}
 
       {/* 2FA CHALLENGE FORM */}
       {twoFactorChallenge ? (
         <form onSubmit={handle2faSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Box style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 12 }}>
-            <Box style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#1d4ed8', fontWeight: 700, fontSize: '0.8rem', marginBottom: 4 }}>
+          <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#1d4ed8', fontWeight: 700, fontSize: '0.8rem', marginBottom: 4 }}>
               <IconShieldLock size={16} />
               <span>AUTHENTICATOR APP REQUIRED</span>
-            </Box>
+            </div>
             <p style={{ margin: 0, fontSize: '0.76rem', color: '#3b82f6', lineHeight: 1.4 }}>
               Open Google Authenticator or Microsoft Authenticator and enter the dynamic 6-digit TOTP code.
             </p>
-          </Box>
+          </div>
 
-          <Box>
+          <div>
             <label className="tech-mono-label" htmlFor="two-factor-code">
               6-DIGIT AUTHENTICATOR CODE
             </label>
@@ -449,7 +443,7 @@ export function LoginForm({
                 },
               }}
             />
-          </Box>
+          </div>
 
           <button
             type="submit"
@@ -488,7 +482,7 @@ export function LoginForm({
       ) : loginMethod === 'password' ? (
         /* PASSWORD LOGIN FORM */
         <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Box>
+          <div>
             <label className="tech-mono-label" htmlFor="login-email">
               USERNAME OR EMAIL
             </label>
@@ -509,10 +503,10 @@ export function LoginForm({
                 },
               }}
             />
-          </Box>
+          </div>
 
-          <Box>
-            <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <label className="tech-mono-label" htmlFor="login-password" style={{ margin: 0 }}>
                 PASSWORD
               </label>
@@ -532,7 +526,7 @@ export function LoginForm({
               >
                 Forgot password?
               </Anchor>
-            </Box>
+            </div>
             <PasswordInput
               id="login-password"
               value={password}
@@ -550,7 +544,7 @@ export function LoginForm({
                 },
               }}
             />
-          </Box>
+          </div>
 
           <button
             type="submit"
@@ -569,12 +563,12 @@ export function LoginForm({
         </form>
       ) : loginMethod === 'otp' ? (
         /* OTP LOGIN FORM */
-        <Box style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Box>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
             <label className="tech-mono-label" htmlFor="otp-target">
               EMAIL OR PHONE NUMBER
             </label>
-            <Box style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
               <TextInput
                 id="otp-target"
                 value={otpTarget}
@@ -609,12 +603,12 @@ export function LoginForm({
               >
                 {otpCountdown > 0 ? `${otpCountdown}s RESEND` : otpSent ? 'RESEND' : 'SEND CODE'}
               </button>
-            </Box>
-          </Box>
+            </div>
+          </div>
 
           {otpSent && (
             <form onSubmit={handleOtpLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <Box>
+              <div>
                 <label className="tech-mono-label" htmlFor="otp-code">
                   6-DIGIT VERIFICATION CODE
                 </label>
@@ -639,7 +633,7 @@ export function LoginForm({
                     },
                   }}
                 />
-              </Box>
+              </div>
 
               <button
                 type="submit"
@@ -656,11 +650,11 @@ export function LoginForm({
               </button>
             </form>
           )}
-        </Box>
+        </div>
       ) : (
         /* QR SCAN LOGIN FORM */
-        <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 14 }}>
-          <Box
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 14 }}>
+          <div
             style={{
               padding: 14,
               backgroundColor: '#ffffff',
@@ -671,9 +665,9 @@ export function LoginForm({
             }}
           >
             {qrLoading ? (
-              <Box style={{ width: 180, height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 180, height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Generating QR...</span>
-              </Box>
+              </div>
             ) : qrSession?.qrCodeDataUrl ? (
               <img
                 src={qrSession.qrCodeDataUrl}
@@ -682,7 +676,7 @@ export function LoginForm({
               />
             ) : (
               // Fallback generated QR visual if offline
-              <Box
+              <div
                 style={{
                   width: 180,
                   height: 180,
@@ -699,21 +693,21 @@ export function LoginForm({
                 <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', marginTop: 4, color: '#94a3b8' }}>
                   SESSION READY
                 </span>
-              </Box>
+              </div>
             )}
-          </Box>
+          </div>
 
-          <Box style={{ maxWidth: 300 }}>
-            <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#0f172a', fontWeight: 700, fontSize: '0.88rem' }}>
+          <div style={{ maxWidth: 300 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#0f172a', fontWeight: 700, fontSize: '0.88rem' }}>
               <IconDeviceMobile size={18} color="#2563eb" />
               <span>Instant Web QR Sign In</span>
-            </Box>
+            </div>
             <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4 }}>
               Open your authenticated mobile app or camera to scan and approve login instantly.
             </p>
-          </Box>
+          </div>
 
-          <Box style={{ display: 'flex', gap: 8, width: '100%' }}>
+          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
             <button
               type="button"
               onClick={fetchQrSession}
@@ -743,14 +737,14 @@ export function LoginForm({
             >
               {qrSimulating ? 'APPROVING...' : 'DEMO APPROVE'}
             </button>
-          </Box>
-        </Box>
+          </div>
+        </div>
       )}
 
       {/* Divider OR & Social Single Sign-On (only on password/otp tabs) */}
       {!twoFactorChallenge && loginMethod !== 'qr' && (
         <>
-          <Box
+          <div
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -758,7 +752,7 @@ export function LoginForm({
               margin: '18px 0 14px',
             }}
           >
-            <Box style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
+            <div style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
             <span
               style={{
                 fontFamily: 'var(--font-mono)',
@@ -770,10 +764,10 @@ export function LoginForm({
             >
               OR
             </span>
-            <Box style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
-          </Box>
+            <div style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
+          </div>
 
-          <Box style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
             <button
               type="button"
               className="tech-btn-social"
@@ -798,22 +792,22 @@ export function LoginForm({
               <GitHubIcon size={16} />
               <span>GitHub</span>
             </button>
-          </Box>
+          </div>
         </>
       )}
 
       {/* Bottom Switcher: Create an account */}
       {!twoFactorChallenge && (
-        <Box style={{ marginTop: 'auto', paddingTop: 12 }}>
-          <Box
+        <div style={{ marginTop: 'auto', paddingTop: 12 }}>
+          <div
             className="tech-callout-card tech-callout-interactive"
             onClick={onNavigateRegister}
             role="button"
             tabIndex={0}
             id="nav-to-register-btn"
           >
-            <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-              <Box>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div>
                 <span
                   style={{
                     fontFamily: 'var(--font-mono)',
@@ -840,11 +834,11 @@ export function LoginForm({
                 >
                   CREATE AN ACCOUNT<span className="tech-headline-dot">.</span>
                 </span>
-              </Box>
+              </div>
               <IconArrowRight size={18} color="#2563eb" style={{ flexShrink: 0, marginLeft: 12 }} />
-            </Box>
-          </Box>
-        </Box>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* OAuth SSO Modal */}
@@ -854,6 +848,6 @@ export function LoginForm({
         provider={oauthProvider}
         onLoginSuccess={onLoginSuccess}
       />
-    </Box>
+    </div>
   )
 }
