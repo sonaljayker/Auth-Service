@@ -7,12 +7,16 @@ services:
       dockerfile: Dockerfile
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SERVER_PORT=8080
+      - SERVER_PORT=8090
       - SECURITY_JWT_SECRET=change-me-dev-very-long-and-secure-secret-key-for-512-bit-hs512-algorithm
     ports:
-      - "8080:8080"
+      - "8090:8090"
     depends_on:
       - postgres
+
+  frontend:
+    ports:
+      - "3000:80"
 
   postgres:
     image: postgres:15-alpine

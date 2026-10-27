@@ -3,8 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "dev": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build",
     "dev:up": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build",
+    "dev up": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build",
     "dev:down": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml down",
+    "dev down": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml down",
     "uat:up": "docker-compose -f docker-compose.yml -f docker-compose.uat.yml up -d --build",
     "uat:down": "docker-compose -f docker-compose.yml -f docker-compose.uat.yml down",
     "prod:up": "docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build",
