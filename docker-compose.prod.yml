@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   app:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SECURITY_JWT_SECRET=${PROD_JWT_SECRET}
+      - SECURITY_JWT_SECRET=${PROD_JWT_SECRET:-change-me-prod-very-long-and-secure-secret-key-for-512-bit-hs512-algorithm}
     restart: always
 
   postgres:

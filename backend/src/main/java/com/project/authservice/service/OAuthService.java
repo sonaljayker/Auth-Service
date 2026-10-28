@@ -34,7 +34,7 @@ public class OAuthService {
     }
 
     /**
-     * Process OAuth login for Google, GitHub, etc.
+     * Process OAuth login for Google, GitHub, Facebook, etc.
      * Finds existing user by email or automatically provisions a new account.
      */
     @Transactional
@@ -68,7 +68,20 @@ public class OAuthService {
         final String finalUsername = username;
         final Provider finalProvider = provider;
 
-        User user = userRepository.findByEmail(finalEmail).orElseGet(() -> {
+        User user = userRepository.findByEmail(finalEmail).map(existingUser -> {
+            boolean updated = false;
+            // If user's provider was local or unset, link OAuth provider
+            if (existingUser.getProvider() == null || existingUser.getProvider() == Provider.LOCAL) {
+                existingUser.setProvider(finalProvider);
+                updated = true;
+            }
+            // If username was unset or blank, set it from OAuth profile
+            if ((existingUser.getUsername() == null || existingUser.getUsername().isBlank()) && !finalUsername.isBlank()) {
+                existingUser.setUsername(finalUsername);
+                updated = true;
+            }
+            return updated ? userRepository.save(existingUser) : existingUser;
+        }).orElseGet(() -> {
             User newUser = User.builder()
                     .email(finalEmail)
                     .username(finalUsername)
@@ -78,6 +91,10 @@ public class OAuthService {
                     .build();
             return userRepository.save(newUser);
         });
+
+        if (!user.isEnabled()) {
+            throw new IllegalArgumentException("Account is disabled. Please contact support.");
+        }
 
         // If user already had 2FA enabled, enforce 2FA verification
         if (user.isTwoFactorEnabled()) {
@@ -97,7 +114,7 @@ public class OAuthService {
                 .refreshToken(refreshToken)
                 .twoFactorRequired(false)
                 .message("Successfully authenticated with " + provider.name())
-                .user(modelMapper.map(user, UserDto.class))
+                .user(modelMapper != null ? modelMapper.map(user, UserDto.class) : null)
                 .build();
     }
 }

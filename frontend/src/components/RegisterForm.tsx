@@ -1,365 +1,311 @@
 import React, { useState } from 'react'
-import {
-  TextInput,
-  PasswordInput,
-  Anchor,
-  Text,
-  Divider,
-} from '@mantine/core'
-import {
-  IconUser,
-  IconMail,
-  IconLock,
-  IconArrowRight,
-  IconAlertCircle,
-  IconCheck,
-} from '@tabler/icons-react'
+import { IconArrowRight, IconAlertCircle, IconCheck } from '@tabler/icons-react'
 import { GoogleIcon, GitHubIcon } from './SocialButtons'
-import { IsometricCube } from './IsometricCube'
 import { OAuthModal } from './OAuthModal'
+import { TechInput, TechButton, TechSocialButton } from './TechControls'
 import { registerApi } from '../services/authApi'
 
-export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSuccess }) {
-  const [username, setUsername] = useState('')
+interface RegisterFormProps {
+  onNavigateLogin: () => void
+  onRegisterSuccess?: (res?: any) => void
+  onLoginSuccess?: (res?: any) => void
+}
+
+export function RegisterForm({
+  onNavigateLogin,
+  onRegisterSuccess,
+  onLoginSuccess,
+}: RegisterFormProps) {
+  // Form fields - no dummy presets
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
+
+  // Status & Feedback
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [successInfo, setSuccessInfo] = useState(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [successInfo, setSuccessInfo] = useState<string | null>(null)
 
   // OAuth SSO state
   const [oauthModalOpen, setOauthModalOpen] = useState(false)
-  const [oauthProvider, setOauthProvider] = useState('GOOGLE')
+  const [oauthProvider, setOauthProvider] = useState<'GOOGLE' | 'GITHUB'>('GOOGLE')
 
-  const handleSubmit = async (e) => {
+  // Validation
+  const validate = () => {
+    const errs: Record<string, string> = {}
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!email.trim()) {
+      errs.email = 'Work email is required'
+    } else if (!emailRegex.test(email.trim())) {
+      errs.email = 'Please enter a valid work email address'
+    }
+
+    if (!password) {
+      errs.password = 'Password is required'
+    } else if (password.length < 6) {
+      errs.password = 'Password must be at least 6 characters'
+    }
+
+    if (!confirmPassword) {
+      errs.confirmPassword = 'Password confirmation is required'
+    } else if (password !== confirmPassword) {
+      errs.confirmPassword = 'Passwords do not match'
+    }
+
+    if (!acceptedTerms) {
+      errs.terms = 'You must accept the R&D Platform Security & Usage terms'
+    }
+
+    setFieldErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSuccessInfo(null)
 
-    if (!email) {
-      setError('Email address is required')
-      return
-    }
-    if (!password) {
-      setError('Password is required')
-      return
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
+    if (!validate()) return
 
     setLoading(true)
     try {
+      const derivedUsername = username.trim() || fullName.trim().toLowerCase().replace(/\s+/g, '_') || email.split('@')[0]
       const result = await registerApi({
-        email,
-        username: username || email.split('@')[0],
+        email: email.trim().toLowerCase(),
+        username: derivedUsername,
+        fullName: fullName.trim(),
         password,
       })
-      setSuccessInfo('Account created successfully! Redirecting to login...')
-      if (onRegisterSuccess) {
-        setTimeout(() => {
+
+      setSuccessInfo('Account successfully provisioned in database! Redirecting to sign in...')
+      setTimeout(() => {
+        if (onRegisterSuccess) {
           onRegisterSuccess(result)
-        }, 1200)
-      }
-    } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.')
+        } else {
+          onNavigateLogin()
+        }
+      }, 1200)
+    } catch (err: any) {
+      setError(err.message || 'Registration failed with backend service')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Top Header: Logo + Version */}
+    <div className="rnd-fade-in" style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* Brand Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div className="tech-logo-box">R&amp;D</div>
-        <span className="tech-version-tag">v 1.0.0</span>
-      </div>
-
-      {/* Kicker + Headline with Isometric Cube */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
-        <div style={{ flex: 1, paddingRight: 10 }}>
-          <div className="tech-kicker" style={{ marginBottom: 8 }}>
-            02 / GET STARTED
-          </div>
-          <h1 className="tech-headline">
-            CREATE AN <br />
-            ACCOUNT<span className="tech-headline-dot">.</span>
-          </h1>
-          <p className="tech-subtitle" style={{ marginTop: 8 }}>
-            Join our R&amp;D engineering workspace and start building.
-          </p>
-        </div>
-
-        {/* Isometric Cube Graphic */}
-        <div style={{ flexShrink: 0, marginTop: -6 }}>
-          <IsometricCube size={96} />
+        <div className="rnd-logo-square">R&amp;D</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="tech-kicker-badge">
+            <span className="tech-kicker-dot" />
+            ENGINEER PROVISIONING
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#85899E' }}>
+            v 1.0.0
+          </span>
         </div>
       </div>
 
-      {/* Error / Alert feedback */}
+      {/* Main Heading & Description */}
+      <div style={{ marginBottom: 22 }}>
+        <h2 className="rnd-form-heading">START BUILDING.</h2>
+        <p className="rnd-form-subtext">
+          Create your account and begin your engineering journey.
+        </p>
+      </div>
+
+      {/* Global Error Banner */}
       {error && (
-        <div
-          style={{
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            color: '#b91c1c',
-            padding: '10px 14px',
-            borderRadius: 8,
-            fontSize: '0.82rem',
-            marginBottom: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <IconAlertCircle size={16} />
+        <div className="rnd-alert rnd-alert-error" role="alert">
+          <IconAlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>{error}</span>
         </div>
       )}
 
+      {/* Global Success Banner */}
       {successInfo && (
-        <div
-          style={{
-            backgroundColor: '#f0fdf4',
-            border: '1px solid #bbf7d0',
-            color: '#15803d',
-            padding: '10px 14px',
-            borderRadius: 8,
-            fontSize: '0.82rem',
-            marginBottom: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <IconCheck size={16} />
+        <div className="rnd-alert rnd-alert-success" role="status">
+          <IconCheck size={16} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>{successInfo}</span>
         </div>
       )}
 
       {/* Registration Form */}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* USERNAME Field */}
-        <div>
-          <label className="tech-mono-label" htmlFor="reg-username">
-            USERNAME
-          </label>
-          <TextInput
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Full Name & Username in 2 columns */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <TechInput
+            id="reg-fullname"
+            label="FULL NAME"
+            placeholder="e.g. Alex Vance"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            autoComplete="name"
+          />
+
+          <TechInput
             id="reg-username"
+            label="USERNAME (OPTIONAL)"
+            placeholder="e.g. alex_vance"
             value={username}
-            onChange={(e) => setUsername(e.currentTarget.value)}
-            placeholder="e.g. alex_dev"
-            leftSection={<IconUser size={16} color="#6b7280" />}
-            styles={{
-              input: {
-                height: 44,
-                borderRadius: 9,
-                borderColor: '#e5e7eb',
-                fontSize: '0.82rem',
-              },
-            }}
+            onChange={(e) => setUsername(e.target.value)}
+            helperText="Derived from email if blank."
+            autoComplete="username"
           />
         </div>
 
-        {/* EMAIL Field */}
-        <div>
-          <label className="tech-mono-label" htmlFor="reg-email">
-            WORK EMAIL
+        {/* Email Address */}
+        <TechInput
+          id="reg-email"
+          label="WORK EMAIL ADDRESS"
+          type="email"
+          placeholder="engineer@company.com"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value)
+            if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: '' })
+          }}
+          error={fieldErrors.email}
+          autoComplete="email"
+          required
+        />
+
+        {/* Password */}
+        <TechInput
+          id="reg-password"
+          label="PASSWORD"
+          isPassword
+          placeholder="At least 6 characters"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value)
+            if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: '' })
+          }}
+          error={fieldErrors.password}
+          autoComplete="new-password"
+          required
+        />
+
+        {/* Confirm Password */}
+        <TechInput
+          id="reg-confirm-password"
+          label="CONFIRM PASSWORD"
+          isPassword
+          placeholder="Re-enter your password"
+          value={confirmPassword}
+          onChange={(e) => {
+            setConfirmPassword(e.target.value)
+            if (fieldErrors.confirmPassword) setFieldErrors({ ...fieldErrors, confirmPassword: '' })
+          }}
+          error={fieldErrors.confirmPassword}
+          autoComplete="new-password"
+          required
+        />
+
+        {/* Terms & Conditions Checkbox */}
+        <div style={{ marginTop: 2 }}>
+          <label className="rnd-checkbox-label">
+            <input
+              type="checkbox"
+              className="rnd-checkbox-input"
+              checked={acceptedTerms}
+              onChange={(e) => {
+                setAcceptedTerms(e.target.checked)
+                if (fieldErrors.terms) setFieldErrors({ ...fieldErrors, terms: '' })
+              }}
+              required
+            />
+            <span style={{ fontSize: '0.78rem', color: '#1A1A1A', lineHeight: 1.45 }}>
+              I agree to the <a href="#terms" className="rnd-link" onClick={(e) => e.preventDefault()}>R&amp;D Platform Engineering Security Standards</a> and Confidentiality Agreement.
+            </span>
           </label>
-          <TextInput
-            id="reg-email"
-            value={email}
-            onChange={(e) => setEmail(e.currentTarget.value)}
-            placeholder="engineer@company.com"
-            leftSection={<IconMail size={16} color="#6b7280" />}
-            required
-            styles={{
-              input: {
-                height: 44,
-                borderRadius: 9,
-                borderColor: '#e5e7eb',
-                fontSize: '0.85rem',
-              },
-            }}
-          />
-        </div>
-
-        {/* PASSWORD Field */}
-        <div>
-          <label className="tech-mono-label" htmlFor="reg-password">
-            PASSWORD
-          </label>
-          <PasswordInput
-            id="reg-password"
-            value={password}
-            onChange={(e) => setPassword(e.currentTarget.value)}
-            placeholder="Create strong password"
-            leftSection={<IconLock size={16} color="#6b7280" />}
-            required
-            styles={{
-              input: {
-                height: 44,
-                borderRadius: 9,
-                borderColor: '#e5e7eb',
-                fontSize: '0.85rem',
-              },
-            }}
-          />
-        </div>
-
-        {/* CONFIRM PASSWORD Field */}
-        <div>
-          <label className="tech-mono-label" htmlFor="reg-confirm-password">
-            CONFIRM PASSWORD
-          </label>
-          <PasswordInput
-            id="reg-confirm-password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.currentTarget.value)}
-            placeholder="Confirm your password"
-            leftSection={<IconLock size={16} color="#6b7280" />}
-            required
-            styles={{
-              input: {
-                height: 44,
-                borderRadius: 9,
-                borderColor: '#e5e7eb',
-                fontSize: '0.85rem',
-              },
-            }}
-          />
-        </div>
-
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className="tech-btn-primary"
-          disabled={loading}
-          id="register-submit-btn"
-          style={{ marginTop: 4, height: 48 }}
-        >
-          {loading ? (
-            'CREATING ACCOUNT...'
-          ) : (
-            <>
-              <span>CREATE ACCOUNT</span>
-              <IconArrowRight size={18} stroke={2.4} />
-            </>
+          {fieldErrors.terms && (
+            <div className="rnd-field-error" style={{ marginTop: 4 }}>
+              <IconAlertCircle size={14} />
+              <span>{fieldErrors.terms}</span>
+            </div>
           )}
-        </button>
+        </div>
+
+        {/* Primary Action Button */}
+        <TechButton
+          type="submit"
+          id="register-submit-btn"
+          loading={loading}
+          loadingText="PROVISIONING ACCOUNT..."
+          style={{ marginTop: 8 }}
+        >
+          CREATE ACCOUNT
+        </TechButton>
       </form>
 
-      {/* Divider OR */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          margin: '16px 0',
-        }}
-      >
-        <div style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
-        <span
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.68rem',
-            fontWeight: 700,
-            color: '#9ca3af',
-            letterSpacing: '0.06em',
-          }}
-        >
-          OR
-        </span>
-        <div style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
+      {/* Divider */}
+      <div className="rnd-divider-row">
+        <div className="rnd-divider-line" />
+        <span className="rnd-divider-text">OR CONTINUE WITH</span>
+        <div className="rnd-divider-line" />
       </div>
 
-      {/* Social SSO Buttons */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
-        <button
-          type="button"
-          className="tech-btn-social"
+      {/* Social SSO */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <TechSocialButton
           id="reg-google-btn"
+          icon={<GoogleIcon size={18} />}
+          label="Google"
           onClick={() => {
             setOauthProvider('GOOGLE')
             setOauthModalOpen(true)
           }}
-        >
-          <GoogleIcon size={18} />
-          <span>Google</span>
-        </button>
-        <button
-          type="button"
-          className="tech-btn-social"
+        />
+        <TechSocialButton
           id="reg-github-btn"
+          icon={<GitHubIcon size={18} />}
+          label="GitHub"
           onClick={() => {
             setOauthProvider('GITHUB')
             setOauthModalOpen(true)
           }}
-        >
-          <GitHubIcon size={18} />
-          <span>GitHub</span>
-        </button>
+        />
       </div>
 
-      {/* Bottom Callout / Footer Card -> Navigate back to Login */}
-      <div style={{ marginTop: 'auto' }}>
-        <div
-          className="tech-callout-card tech-callout-interactive"
-          onClick={onNavigateLogin}
-          role="button"
-          tabIndex={0}
-          id="nav-to-login-btn"
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <div>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.68rem',
-                  fontWeight: 700,
-                  color: '#2563eb',
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
-                  display: 'block',
-                  marginBottom: 3,
-                }}
-              >
-                ALREADY REGISTERED?
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: '0.98rem',
-                  fontWeight: 800,
-                  letterSpacing: '-0.01em',
-                  color: '#0f172a',
-                  textTransform: 'uppercase',
-                }}
-              >
-                SIGN IN INSTEAD<span className="tech-headline-dot">.</span>
-              </span>
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '0.78rem',
-                  color: '#64748b',
-                  marginTop: 3,
-                  lineHeight: 1.35,
-                }}
-              >
-                Access your workspace and continue building.
-              </p>
-            </div>
-            <IconArrowRight size={20} color="#2563eb" style={{ flexShrink: 0, marginLeft: 12 }} />
-          </div>
+      {/* Bottom Switcher: ALREADY HAVE AN ACCOUNT? SIGN IN */}
+      <div
+        className="rnd-nav-card"
+        onClick={onNavigateLogin}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onNavigateLogin()
+          }
+        }}
+        id="nav-to-login-btn"
+      >
+        <div>
+          <span className="tech-label-mono" style={{ color: 'var(--color-brand-primary)', marginBottom: 2 }}>
+            ALREADY HAVE AN ACCOUNT?
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontSize: '1rem',
+              fontWeight: 700,
+              color: '#1A1A1A',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            SIGN IN &rarr;
+          </span>
         </div>
+        <IconArrowRight size={18} color="#3155FF" />
       </div>
 
       {/* OAuth SSO Modal */}
@@ -371,7 +317,7 @@ export function RegisterForm({ onNavigateLogin, onRegisterSuccess, onLoginSucces
           if (onLoginSuccess) {
             onLoginSuccess(res)
           } else if (onRegisterSuccess) {
-            onRegisterSuccess()
+            onRegisterSuccess(res)
           }
         }}
       />

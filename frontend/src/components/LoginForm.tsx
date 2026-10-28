@@ -1,25 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
-  TextInput,
-  PasswordInput,
-  Anchor,
-} from '@mantine/core'
-import {
-  IconUser,
-  IconLock,
-  IconArrowRight,
   IconAlertCircle,
   IconCheck,
+  IconLock,
   IconMail,
-  IconKey,
   IconQrcode,
   IconShieldLock,
   IconRefresh,
   IconDeviceMobile,
 } from '@tabler/icons-react'
 import { GoogleIcon, GitHubIcon } from './SocialButtons'
-import { IsometricCube } from './IsometricCube'
 import { OAuthModal } from './OAuthModal'
+import { TechInput, TechButton, TechSocialButton } from './TechControls'
 import {
   loginApi,
   login2faApi,
@@ -30,24 +22,25 @@ import {
   approveQrSessionApi,
 } from '../services/authApi'
 
+interface LoginFormProps {
+  onNavigateRegister: () => void
+  onNavigateForgot: () => void
+  onLoginSuccess: (session: any) => void
+}
+
 export function LoginForm({
   onNavigateRegister,
   onNavigateForgot,
   onLoginSuccess,
-  variant = 'with-cube',
-}) {
-  // Login Tab: 'password' | 'otp' | 'qr'
-  const [loginMethod, setLoginMethod] = useState('password')
+}: LoginFormProps) {
+  // Method tab: 'password' | 'otp' | 'qr'
+  const [loginMethod, setLoginMethod] = useState<'password' | 'otp' | 'qr'>('password')
 
-  // OAuth SSO state
-  const [oauthModalOpen, setOauthModalOpen] = useState(false)
-  const [oauthProvider, setOauthProvider] = useState('GOOGLE')
-
-  // Password state
-  const [email, setEmail] = useState('')
+  // Password fields
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
 
-  // 2FA Challenge state (triggered after password validation if user has 2FA enabled)
+  // 2FA Challenge state
   const [twoFactorChallenge, setTwoFactorChallenge] = useState(false)
   const [tempToken, setTempToken] = useState('')
   const [twoFactorCode, setTwoFactorCode] = useState('')
@@ -58,16 +51,21 @@ export function LoginForm({
   const [otpSent, setOtpSent] = useState(false)
   const [otpCountdown, setOtpCountdown] = useState(0)
 
-  // QR Login state
-  const [qrSession, setQrSession] = useState(null)
+  // QR Session state
+  const [qrSession, setQrSession] = useState<any>(null)
   const [qrLoading, setQrLoading] = useState(false)
   const [qrSimulating, setQrSimulating] = useState(false)
-  const pollTimerRef = useRef(null)
+  const pollTimerRef = useRef<any>(null)
 
-  // Common form status
+  // OAuth SSO state
+  const [oauthModalOpen, setOauthModalOpen] = useState(false)
+  const [oauthProvider, setOauthProvider] = useState<'GOOGLE' | 'GITHUB'>('GOOGLE')
+
+  // Status & Feedback
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [successInfo, setSuccessInfo] = useState(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [successInfo, setSuccessInfo] = useState<string | null>(null)
 
   // Countdown timer for OTP
   useEffect(() => {
@@ -77,113 +75,121 @@ export function LoginForm({
     }
   }, [otpCountdown])
 
-  // Initialize or poll QR Session when in 'qr' tab
-  useEffect(() => {
-    if (loginMethod === 'qr') {
-      fetchQrSession()
-    } else {
-      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
-    }
-    return () => {
-      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
-    }
-  }, [loginMethod])
-
-  const fetchQrSession = async () => {
-    setQrLoading(true)
-    setError('')
-    try {
-      const res = await generateQrSessionApi()
-      setQrSession(res.data)
-      startQrPolling(res.data.sessionToken)
-    } catch (err) {
-      setError('Failed to generate QR login session')
-    } finally {
-      setQrLoading(false)
-    }
-  }
-
-  const startQrPolling = (sessionToken) => {
+  const startQrPolling = useCallback((sessionToken: string) => {
     if (pollTimerRef.current) clearInterval(pollTimerRef.current)
     pollTimerRef.current = setInterval(async () => {
       try {
         const res = await checkQrSessionStatusApi(sessionToken)
-        if (res.data?.status === 'APPROVED' && res.data?.accessToken) {
+        if (res.status === 'APPROVED' && res.accessToken) {
           clearInterval(pollTimerRef.current)
-          setSuccessInfo('QR Code verified! Logging in...')
+          setSuccessInfo('QR session approved. Authenticating...')
           setTimeout(() => {
             if (onLoginSuccess) {
               onLoginSuccess({
                 success: true,
-                data: res.data,
-                isMock: res.isMock,
+                data: res,
               })
             }
           }, 600)
-        } else if (res.data?.status === 'EXPIRED') {
+        } else if (res.status === 'EXPIRED') {
           clearInterval(pollTimerRef.current)
         }
       } catch (err) {
         console.warn('QR poll error', err)
       }
     }, 2500)
-  }
+  }, [onLoginSuccess])
 
-  // Handle Password Submit
-  const handlePasswordSubmit = async (e) => {
+  const fetchQrSession = useCallback(async () => {
+    setQrLoading(true)
+    setError('')
+    try {
+      const res = await generateQrSessionApi()
+      setQrSession(res)
+      if (res?.sessionToken) {
+        startQrPolling(res.sessionToken)
+      }
+    } catch (err: any) {
+      setError(err.message || 'Unable to initialize QR session. Please check backend status.')
+    } finally {
+      setQrLoading(false)
+    }
+  }, [startQrPolling])
+
+  // Clear polling on unmount or tab change away from qr
+  useEffect(() => {
+    if (loginMethod !== 'qr' && pollTimerRef.current) {
+      clearInterval(pollTimerRef.current)
+    }
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    }
+  }, [loginMethod])
+
+  // Handle standard password login
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSuccessInfo(null)
+    const errs: Record<string, string> = {}
 
-    if (!email) {
-      setError('Email or username is required')
-      return
+    if (!identifier.trim()) {
+      errs.identifier = 'Username or email is required'
     }
     if (!password) {
-      setError('Password is required')
+      errs.password = 'Password is required'
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs)
       return
     }
+    setFieldErrors({})
 
     setLoading(true)
     try {
-      const result = await loginApi({ email, password })
+      const result = await loginApi({
+        email: identifier.trim(),
+        username: identifier.trim(),
+        password,
+      })
 
-      // Check if 2FA is required by the backend
+      // Check if 2FA is required by backend policy
       if (result.data?.twoFactorRequired) {
         setTwoFactorChallenge(true)
         setTempToken(result.data.tempToken)
-        setSuccessInfo('Password verified. Please enter your 6-digit Authenticator code.')
+        setSuccessInfo('Two-factor security active. Enter the 6-digit code from your authenticator app.')
         return
       }
 
-      setSuccessInfo(result.isMock ? 'Logged in (Simulated Mode)' : 'Logged in successfully!')
+      setSuccessInfo('Authentication successful')
       if (onLoginSuccess) {
         setTimeout(() => onLoginSuccess(result), 600)
       }
-    } catch (err) {
-      setError(err.message || 'Invalid email or password')
+    } catch (err: any) {
+      setError(err.message || 'Invalid credentials or connection error')
     } finally {
       setLoading(false)
     }
   }
 
-  // Handle 2FA Challenge Submit
-  const handle2faSubmit = async (e) => {
+  // Handle 2FA submission
+  const handle2faSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     if (!twoFactorCode || twoFactorCode.length !== 6) {
-      setError('Please enter the 6-digit code from your authenticator app')
+      setError('Please enter a valid 6-digit authenticator code')
       return
     }
 
     setLoading(true)
     try {
       const result = await login2faApi({ tempToken, code: twoFactorCode })
-      setSuccessInfo('Two-Factor Authentication verified!')
+      setSuccessInfo('Two-Factor verification successful')
       if (onLoginSuccess) {
         setTimeout(() => onLoginSuccess(result), 600)
       }
-    } catch (err) {
+    } catch (err: any) {
       setError(err.message || 'Invalid 2FA code')
     } finally {
       setLoading(false)
@@ -191,170 +197,139 @@ export function LoginForm({
   }
 
   // Handle Send OTP
-  const handleSendOtp = async (e) => {
+  const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     setError('')
-    if (!otpTarget) {
-      setError('Please enter your email or phone number')
+    if (!otpTarget.trim()) {
+      setError('Please enter your work email or registered phone number')
       return
     }
 
     setLoading(true)
     try {
-      const res = await sendOtpApi({ target: otpTarget, type: 'LOGIN' })
+      const res = await sendOtpApi({ target: otpTarget.trim(), type: 'LOGIN' })
       setOtpSent(true)
       setOtpCountdown(60)
-      setSuccessInfo(res.data?.message || `One-time code sent to ${otpTarget}`)
-    } catch (err) {
-      setError(err.message || 'Failed to send OTP')
+      setSuccessInfo(res?.message || `One-time passcode dispatched to ${otpTarget}`)
+    } catch (err: any) {
+      setError(err.message || 'Failed to dispatch OTP code')
     } finally {
       setLoading(false)
     }
   }
 
-  // Handle OTP Verify & Login
-  const handleOtpLogin = async (e) => {
+  // Handle OTP Verify
+  const handleOtpLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (!otpCode) {
-      setError('Please enter the 6-digit code')
+    if (!otpCode.trim()) {
+      setError('Please enter the 6-digit verification code')
       return
     }
 
     setLoading(true)
     try {
-      const result = await loginWithOtpApi({ target: otpTarget, code: otpCode })
-      setSuccessInfo('Code verified! Logging in...')
+      const result = await loginWithOtpApi({ target: otpTarget.trim(), code: otpCode.trim() })
+      setSuccessInfo('OTP verified. Logging into workspace...')
       if (onLoginSuccess) {
         setTimeout(() => onLoginSuccess(result), 600)
       }
-    } catch (err) {
-      setError(err.message || 'Invalid verification code')
+    } catch (err: any) {
+      setError(err.message || 'Invalid or expired verification code')
     } finally {
       setLoading(false)
     }
   }
 
-  // Developer Test helper: Simulate scanning QR code on a mobile app
-  const handleSimulateMobileApproval = async () => {
+  // QR Session Approval
+  const handleApproveQr = async () => {
     if (!qrSession?.sessionToken) return
+    if (!identifier || !password) {
+      setError('Please enter your email and password above to approve the QR login session.')
+      return
+    }
     setQrSimulating(true)
     try {
       await approveQrSessionApi({
         sessionToken: qrSession.sessionToken,
-        email: email || 'mobile-tester@workspace.ai',
-        password: 'password123',
+        email: identifier,
+        password,
       })
-      setSuccessInfo('Simulated mobile approval complete! Auto-logging in...')
-    } catch (err) {
-      setError('Could not simulate mobile approval: ' + err.message)
+      setSuccessInfo('QR session approved via credentials!')
+    } catch (err: any) {
+      setError(err.message || 'Could not approve QR session.')
     } finally {
       setQrSimulating(false)
     }
   }
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Top Header: Logo + Version */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <div className="tech-logo-box">R&amp;D</div>
-        <span className="tech-version-tag">MNC ENTERPRISE AUTH</span>
-      </div>
-
-      {/* Headline & Graphic */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-        <div style={{ flex: 1, paddingRight: variant === 'with-cube' ? 12 : 0 }}>
-          <div className="tech-kicker" style={{ marginBottom: 6 }}>
-            01 / ENTERPRISE SIGN IN
-          </div>
-          <h1 className="tech-headline">
-            {twoFactorChallenge ? (
-              <>
-                TWO-FACTOR <br />
-                SECURITY<span className="tech-headline-dot">.</span>
-              </>
-            ) : loginMethod === 'otp' ? (
-              <>
-                SIGN IN <br />
-                WITH OTP<span className="tech-headline-dot">.</span>
-              </>
-            ) : loginMethod === 'qr' ? (
-              <>
-                SCAN QR TO <br />
-                SIGN IN<span className="tech-headline-dot">.</span>
-              </>
-            ) : (
-              <>
-                WELCOME <br />
-                BACK<span className="tech-headline-dot">.</span>
-              </>
-            )}
-          </h1>
-          <p className="tech-subtitle" style={{ marginTop: 6 }}>
-            {twoFactorChallenge
-              ? 'Enter the 6-digit code from Google/Microsoft Authenticator.'
-              : loginMethod === 'otp'
-              ? 'Instant passwordless sign in via secure Gmail OTP verification code.'
-              : loginMethod === 'qr'
-              ? 'Scan with your authenticator or authorized mobile device.'
-              : 'Sign in to access your secure enterprise compute workspace.'}
-          </p>
+    <div className="rnd-fade-in" style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* Brand Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+        <div className="rnd-logo-square">R&amp;D</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="tech-kicker-badge">
+            <span className="tech-kicker-dot" />
+            R&amp;D / SYSTEMS LAB
+          </span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#85899E' }}>
+            v 1.0.0
+          </span>
         </div>
-
-        {variant === 'with-cube' && !twoFactorChallenge && (
-          <div style={{ flexShrink: 0, marginTop: -8 }}>
-            <IsometricCube size={95} />
-          </div>
-        )}
       </div>
 
-      {/* Authentication Mode Switcher Pills (Only if not in 2FA challenge) */}
+      {/* Main Form Heading & Supporting Description */}
+      <div style={{ marginBottom: 24 }}>
+        <h2 className="rnd-form-heading">
+          {twoFactorChallenge ? 'VERIFY SECURITY CODE.' : 'SIGN IN TO CONTINUE.'}
+        </h2>
+        <p className="rnd-form-subtext">
+          {twoFactorChallenge
+            ? 'Enter the 6-digit TOTP code generated by your Authenticator app.'
+            : 'Access your workspace and continue building.'}
+        </p>
+      </div>
+
+      {/* Secondary Mode Switcher (Password | OTP | QR) */}
       {!twoFactorChallenge && (
-        <div
-          style={{
-            display: 'flex',
-            backgroundColor: '#f1f5f9',
-            padding: 3,
-            borderRadius: 10,
-            marginBottom: 18,
-            border: '1px solid #e2e8f0',
-          }}
-        >
+        <div className="rnd-tab-bar">
           <button
             type="button"
+            className={`rnd-tab-button ${loginMethod === 'password' ? 'active' : ''}`}
             onClick={() => {
               setLoginMethod('password')
               setError('')
+              setFieldErrors({})
               setSuccessInfo(null)
             }}
-            className={`auth-tab-btn ${loginMethod === 'password' ? 'active' : ''}`}
-            style={{ flex: 1, padding: '7px 10px', fontSize: '0.74rem' }}
           >
             <IconLock size={14} />
             <span>PASSWORD</span>
           </button>
           <button
             type="button"
+            className={`rnd-tab-button ${loginMethod === 'otp' ? 'active' : ''}`}
             onClick={() => {
               setLoginMethod('otp')
               setError('')
+              setFieldErrors({})
               setSuccessInfo(null)
             }}
-            className={`auth-tab-btn ${loginMethod === 'otp' ? 'active' : ''}`}
-            style={{ flex: 1, padding: '7px 10px', fontSize: '0.74rem' }}
           >
             <IconMail size={14} />
             <span>OTP CODE</span>
           </button>
           <button
             type="button"
+            className={`rnd-tab-button ${loginMethod === 'qr' ? 'active' : ''}`}
             onClick={() => {
               setLoginMethod('qr')
               setError('')
+              setFieldErrors({})
               setSuccessInfo(null)
+              fetchQrSession()
             }}
-            className={`auth-tab-btn ${loginMethod === 'qr' ? 'active' : ''}`}
-            style={{ flex: 1, padding: '7px 10px', fontSize: '0.74rem' }}
           >
             <IconQrcode size={14} />
             <span>SCAN QR</span>
@@ -362,102 +337,69 @@ export function LoginForm({
         </div>
       )}
 
-      {/* Error Feedback */}
+      {/* Global Alerts */}
       {error && (
-        <div
-          style={{
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            color: '#b91c1c',
-            padding: '10px 14px',
-            borderRadius: 8,
-            fontSize: '0.82rem',
-            marginBottom: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <IconAlertCircle size={16} />
+        <div className="rnd-alert rnd-alert-error" role="alert">
+          <IconAlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Success Feedback */}
       {successInfo && (
-        <div
-          style={{
-            backgroundColor: '#f0fdf4',
-            border: '1px solid #bbf7d0',
-            color: '#15803d',
-            padding: '10px 14px',
-            borderRadius: 8,
-            fontSize: '0.82rem',
-            marginBottom: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <IconCheck size={16} />
+        <div className="rnd-alert rnd-alert-success" role="status">
+          <IconCheck size={16} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>{successInfo}</span>
         </div>
       )}
 
       {/* 2FA CHALLENGE FORM */}
       {twoFactorChallenge ? (
-        <form onSubmit={handle2faSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#1d4ed8', fontWeight: 700, fontSize: '0.8rem', marginBottom: 4 }}>
+        <form onSubmit={handle2faSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div
+            style={{
+              padding: 14,
+              backgroundColor: 'var(--color-surface-light-blue)',
+              border: '1px solid rgba(49, 85, 255, 0.25)',
+              borderRadius: 4,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#3155FF', fontWeight: 600, fontSize: '0.82rem', marginBottom: 4 }}>
               <IconShieldLock size={16} />
-              <span>AUTHENTICATOR APP REQUIRED</span>
+              <span>AUTHENTICATOR VERIFICATION</span>
             </div>
-            <p style={{ margin: 0, fontSize: '0.76rem', color: '#3b82f6', lineHeight: 1.4 }}>
-              Open Google Authenticator or Microsoft Authenticator and enter the dynamic 6-digit TOTP code.
+            <p style={{ margin: 0, fontSize: '0.78rem', color: '#1A1A1A', lineHeight: 1.45 }}>
+              Open Google Authenticator or Microsoft Authenticator and provide your 6-digit TOTP verification token.
             </p>
           </div>
 
           <div>
-            <label className="tech-mono-label" htmlFor="two-factor-code">
-              6-DIGIT AUTHENTICATOR CODE
+            <label className="tech-label-mono" htmlFor="two-factor-code" style={{ marginBottom: 6, color: '#1A1A1A' }}>
+              6-DIGIT VERIFICATION CODE
             </label>
-            <TextInput
+            <input
               id="two-factor-code"
-              value={twoFactorCode}
-              onChange={(e) => setTwoFactorCode(e.currentTarget.value)}
-              placeholder="e.g. 582910"
-              leftSection={<IconKey size={18} color="#2563eb" />}
+              type="text"
               maxLength={6}
+              value={twoFactorCode}
+              onChange={(e) => setTwoFactorCode(e.target.value)}
+              placeholder="000000"
               autoFocus
               required
-              styles={{
-                input: {
-                  height: 48,
-                  borderRadius: 10,
-                  borderColor: '#2563eb',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '1.2rem',
-                  letterSpacing: '0.3em',
-                  fontWeight: 700,
-                  textAlign: 'center',
-                },
+              className="rnd-input-control"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '1.25rem',
+                letterSpacing: '0.35em',
+                fontWeight: 700,
+                textAlign: 'center',
+                borderColor: '#3155FF',
               }}
             />
           </div>
 
-          <button
-            type="submit"
-            className="tech-btn-primary"
-            disabled={loading}
-            style={{ marginTop: 6 }}
-          >
-            {loading ? 'VERIFYING...' : (
-              <>
-                <span>VERIFY &amp; SIGN IN</span>
-                <IconArrowRight size={18} />
-              </>
-            )}
-          </button>
+          <TechButton type="submit" loading={loading} loadingText="VERIFYING...">
+            VERIFY &amp; SIGN IN
+          </TechButton>
 
           <button
             type="button"
@@ -467,11 +409,11 @@ export function LoginForm({
               setTempToken('')
             }}
             style={{
-              background: 'none',
+              background: 'transparent',
               border: 'none',
-              color: '#64748b',
-              fontSize: '0.78rem',
+              color: '#85899E',
               fontFamily: 'var(--font-mono)',
+              fontSize: '0.75rem',
               cursor: 'pointer',
               marginTop: 4,
             }}
@@ -480,124 +422,90 @@ export function LoginForm({
           </button>
         </form>
       ) : loginMethod === 'password' ? (
-        /* PASSWORD LOGIN FORM */
-        <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div>
-            <label className="tech-mono-label" htmlFor="login-email">
-              USERNAME OR EMAIL
-            </label>
-            <TextInput
-              id="login-email"
-              value={email}
-              onChange={(e) => setEmail(e.currentTarget.value)}
-              placeholder="e.g. engineer@workspace.ai"
-              leftSection={<IconUser size={18} color="#6b7280" />}
-              required
-              styles={{
-                input: {
-                  height: 46,
-                  borderRadius: 10,
-                  borderColor: '#e5e7eb',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '0.875rem',
-                },
-              }}
-            />
-          </div>
+        /* STANDARD PASSWORD FORM */
+        <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* 1. Username or Email */}
+          <TechInput
+            id="login-identifier"
+            label="USERNAME OR EMAIL"
+            placeholder="e.g. engineer@workspace.ai"
+            value={identifier}
+            onChange={(e) => {
+              setIdentifier(e.target.value)
+              if (fieldErrors.identifier) setFieldErrors({ ...fieldErrors, identifier: '' })
+            }}
+            error={fieldErrors.identifier}
+            autoComplete="username"
+            required
+          />
 
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="tech-mono-label" htmlFor="login-password" style={{ margin: 0 }}>
-                PASSWORD
-              </label>
-              <Anchor
+          {/* 2. Password */}
+          <TechInput
+            id="login-password"
+            label="PASSWORD"
+            isPassword
+            placeholder="Enter your security password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value)
+              if (fieldErrors.password) setFieldErrors({ ...fieldErrors, password: '' })
+            }}
+            error={fieldErrors.password}
+            autoComplete="current-password"
+            required
+            rightAction={
+              <a
                 href="#forgot"
+                className="rnd-link"
+                style={{ fontSize: '0.74rem' }}
                 onClick={(e) => {
                   e.preventDefault()
-                  if (onNavigateForgot) onNavigateForgot()
-                }}
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  color: '#2563eb',
-                  textDecoration: 'none',
+                  onNavigateForgot()
                 }}
               >
                 Forgot password?
-              </Anchor>
-            </div>
-            <PasswordInput
-              id="login-password"
-              value={password}
-              onChange={(e) => setPassword(e.currentTarget.value)}
-              placeholder="Enter your password"
-              leftSection={<IconLock size={18} color="#6b7280" />}
-              required
-              styles={{
-                input: {
-                  height: 46,
-                  borderRadius: 10,
-                  borderColor: '#e5e7eb',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '0.875rem',
-                },
-              }}
-            />
-          </div>
+              </a>
+            }
+          />
 
-          <button
+          {/* Full-width electric-blue SIGN IN button */}
+          <TechButton
             type="submit"
-            className="tech-btn-primary"
-            disabled={loading}
             id="login-submit-btn"
-            style={{ marginTop: 4 }}
+            loading={loading}
+            loadingText="AUTHENTICATING..."
+            style={{ marginTop: 8 }}
           >
-            {loading ? 'AUTHENTICATING...' : (
-              <>
-                <span>SIGN IN</span>
-                <IconArrowRight size={18} stroke={2.4} />
-              </>
-            )}
-          </button>
+            SIGN IN
+          </TechButton>
         </form>
       ) : loginMethod === 'otp' ? (
         /* OTP LOGIN FORM */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div>
-            <label className="tech-mono-label" htmlFor="otp-target">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="rnd-input-group">
+            <label className="tech-label-mono" htmlFor="otp-target">
               EMAIL OR PHONE NUMBER
             </label>
             <div style={{ display: 'flex', gap: 8 }}>
-              <TextInput
+              <input
                 id="otp-target"
-                value={otpTarget}
-                onChange={(e) => setOtpTarget(e.currentTarget.value)}
+                type="text"
+                className="rnd-input-control"
                 placeholder="e.g. engineer@workspace.ai"
-                leftSection={<IconMail size={18} color="#6b7280" />}
+                value={otpTarget}
+                onChange={(e) => setOtpTarget(e.target.value)}
                 style={{ flex: 1 }}
-                styles={{
-                  input: {
-                    height: 46,
-                    borderRadius: 10,
-                    borderColor: '#e5e7eb',
-                  },
-                }}
               />
               <button
                 type="button"
-                onClick={handleSendOtp}
-                disabled={loading || otpCountdown > 0 || !otpTarget}
+                onClick={() => handleSendOtp()}
+                disabled={loading || otpCountdown > 0 || !otpTarget.trim()}
+                className="rnd-btn-primary"
                 style={{
-                  padding: '0 14px',
-                  borderRadius: 10,
-                  backgroundColor: otpCountdown > 0 ? '#f1f5f9' : '#2563eb',
-                  color: otpCountdown > 0 ? '#94a3b8' : '#ffffff',
-                  border: 'none',
-                  fontSize: '0.74rem',
-                  fontFamily: 'var(--font-mono)',
-                  fontWeight: 700,
-                  cursor: otpCountdown > 0 ? 'not-allowed' : 'pointer',
+                  width: 'auto',
+                  padding: '0 16px',
+                  height: 'var(--input-height)',
+                  fontSize: '0.76rem',
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -608,235 +516,173 @@ export function LoginForm({
 
           {otpSent && (
             <form onSubmit={handleOtpLogin} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label className="tech-mono-label" htmlFor="otp-code">
-                  6-DIGIT VERIFICATION CODE
-                </label>
-                <TextInput
-                  id="otp-code"
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.currentTarget.value)}
-                  placeholder="e.g. 123456"
-                  leftSection={<IconKey size={18} color="#2563eb" />}
-                  maxLength={6}
-                  required
-                  styles={{
-                    input: {
-                      height: 48,
-                      borderRadius: 10,
-                      borderColor: '#2563eb',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '1.15rem',
-                      letterSpacing: '0.25em',
-                      fontWeight: 700,
-                      textAlign: 'center',
-                    },
-                  }}
-                />
-              </div>
+              <TechInput
+                id="otp-code-input"
+                label="6-DIGIT VERIFICATION CODE"
+                placeholder="123456"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                maxLength={6}
+                required
+              />
 
-              <button
-                type="submit"
-                className="tech-btn-primary"
-                disabled={loading}
-                style={{ marginTop: 4 }}
-              >
-                {loading ? 'VERIFYING...' : (
-                  <>
-                    <span>VERIFY OTP &amp; SIGN IN</span>
-                    <IconArrowRight size={18} stroke={2.4} />
-                  </>
-                )}
-              </button>
+              <TechButton type="submit" loading={loading} loadingText="VERIFYING...">
+                VERIFY OTP &amp; SIGN IN
+              </TechButton>
             </form>
           )}
         </div>
       ) : (
         /* QR SCAN LOGIN FORM */
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16 }}>
           <div
             style={{
-              padding: 14,
-              backgroundColor: '#ffffff',
-              borderRadius: 16,
-              border: '2px dashed #cbd5e1',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
+              padding: 16,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 4,
+              border: '2px dashed #BFC2CC',
               display: 'inline-block',
             }}
           >
             {qrLoading ? (
-              <div style={{ width: 180, height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Generating QR...</span>
+              <div style={{ width: 170, height: 170, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '0.78rem', color: '#85899E', fontFamily: 'var(--font-mono)' }}>
+                  GENERATING QR...
+                </span>
               </div>
             ) : qrSession?.qrCodeDataUrl ? (
               <img
                 src={qrSession.qrCodeDataUrl}
                 alt="Login QR Code"
-                style={{ width: 180, height: 180, display: 'block', borderRadius: 8 }}
+                style={{ width: 170, height: 170, display: 'block' }}
               />
             ) : (
-              // Fallback generated QR visual if offline
               <div
                 style={{
-                  width: 180,
-                  height: 180,
-                  backgroundColor: '#0f172a',
-                  borderRadius: 8,
+                  width: 170,
+                  height: 170,
+                  backgroundColor: '#1A1A1A',
+                  borderRadius: 4,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                 }}
               >
-                <IconQrcode size={100} color="#38bdf8" />
-                <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', marginTop: 4, color: '#94a3b8' }}>
-                  SESSION READY
+                <IconQrcode size={90} color="#3155FF" />
+                <span style={{ fontSize: '0.66rem', fontFamily: 'var(--font-mono)', marginTop: 4, color: '#85899E' }}>
+                  SESSION ACTIVE
                 </span>
               </div>
             )}
           </div>
 
-          <div style={{ maxWidth: 300 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#0f172a', fontWeight: 700, fontSize: '0.88rem' }}>
-              <IconDeviceMobile size={18} color="#2563eb" />
-              <span>Instant Web QR Sign In</span>
+          <div style={{ maxWidth: 320 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontWeight: 700, fontSize: '0.88rem' }}>
+              <IconDeviceMobile size={18} color="#3155FF" />
+              <span>Instant Mobile Authorization</span>
             </div>
-            <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4 }}>
-              Open your authenticated mobile app or camera to scan and approve login instantly.
+            <p style={{ fontSize: '0.78rem', color: '#85899E', marginTop: 4 }}>
+              Scan this code using an authorized mobile workstation or identity client to log in instantly.
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+          <div style={{ display: 'flex', gap: 10, width: '100%' }}>
             <button
               type="button"
               onClick={fetchQrSession}
               disabled={qrLoading}
-              className="tech-btn-social"
-              style={{ flex: 1, padding: '8px 12px', fontSize: '0.72rem' }}
+              className="rnd-btn-secondary"
+              style={{ flex: 1, height: 44, fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}
             >
               <IconRefresh size={14} />
               <span>REFRESH QR</span>
             </button>
             <button
               type="button"
-              onClick={handleSimulateMobileApproval}
+              onClick={handleApproveQr}
               disabled={qrSimulating || qrLoading}
+              className="rnd-btn-secondary"
               style={{
                 flex: 1,
-                padding: '8px 12px',
-                borderRadius: 8,
-                backgroundColor: '#eff6ff',
-                color: '#2563eb',
-                border: '1px solid #bfdbfe',
-                fontSize: '0.72rem',
+                height: 44,
+                backgroundColor: 'var(--color-surface-light-blue)',
+                borderColor: '#3155FF',
+                color: '#3155FF',
+                fontSize: '0.75rem',
                 fontFamily: 'var(--font-mono)',
-                fontWeight: 700,
-                cursor: 'pointer',
+                fontWeight: 600,
               }}
             >
-              {qrSimulating ? 'APPROVING...' : 'DEMO APPROVE'}
+              {qrSimulating ? 'APPROVING...' : 'APPROVE WITH ACCOUNT'}
             </button>
           </div>
         </div>
       )}
 
-      {/* Divider OR & Social Single Sign-On (only on password/otp tabs) */}
+      {/* Social SSO Buttons (Google and GitHub) */}
       {!twoFactorChallenge && loginMethod !== 'qr' && (
         <>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              margin: '18px 0 14px',
-            }}
-          >
-            <div style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                color: '#9ca3af',
-                letterSpacing: '0.06em',
-              }}
-            >
-              OR
-            </span>
-            <div style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
+          <div className="rnd-divider-row">
+            <div className="rnd-divider-line" />
+            <span className="rnd-divider-text">OR CONTINUE WITH</span>
+            <div className="rnd-divider-line" />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-            <button
-              type="button"
-              className="tech-btn-social"
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <TechSocialButton
               id="google-sso-btn"
+              icon={<GoogleIcon size={18} />}
+              label="Google"
               onClick={() => {
                 setOauthProvider('GOOGLE')
                 setOauthModalOpen(true)
               }}
-            >
-              <GoogleIcon size={16} />
-              <span>Google</span>
-            </button>
-            <button
-              type="button"
-              className="tech-btn-social"
+            />
+            <TechSocialButton
               id="github-sso-btn"
+              icon={<GitHubIcon size={18} />}
+              label="GitHub"
               onClick={() => {
                 setOauthProvider('GITHUB')
                 setOauthModalOpen(true)
               }}
-            >
-              <GitHubIcon size={16} />
-              <span>GitHub</span>
-            </button>
+            />
           </div>
         </>
       )}
 
-      {/* Bottom Switcher: Create an account */}
+      {/* Bottom Switcher: CREATE AN ACCOUNT */}
       {!twoFactorChallenge && (
-        <div style={{ marginTop: 'auto', paddingTop: 12 }}>
-          <div
-            className="tech-callout-card tech-callout-interactive"
-            onClick={onNavigateRegister}
-            role="button"
-            tabIndex={0}
-            id="nav-to-register-btn"
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-              <div>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.68rem',
-                    fontWeight: 700,
-                    color: '#2563eb',
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
-                    display: 'block',
-                    marginBottom: 2,
-                  }}
-                >
-                  NEW HERE?
-                </span>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: '0.92rem',
-                    fontWeight: 800,
-                    letterSpacing: '-0.01em',
-                    color: '#0f172a',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  CREATE AN ACCOUNT<span className="tech-headline-dot">.</span>
-                </span>
-              </div>
-              <IconArrowRight size={18} color="#2563eb" style={{ flexShrink: 0, marginLeft: 12 }} />
-            </div>
+        <div
+          className="rnd-nav-card"
+          onClick={onNavigateRegister}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              onNavigateRegister()
+            }
+          }}
+          id="nav-to-register-btn"
+        >
+          <div>
+            <span className="tech-label-mono" style={{ color: 'var(--color-brand-primary)', marginBottom: 2 }}>
+              NEW HERE?
+            </span>
+            <span
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontSize: '1rem',
+                fontWeight: 700,
+                color: '#1A1A1A',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              CREATE AN ACCOUNT &rarr;
+            </span>
           </div>
         </div>
       )}

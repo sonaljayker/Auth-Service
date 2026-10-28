@@ -50,6 +50,9 @@ public class OtpService {
             case LOGIN -> "Account Login";
             case PASSWORD_RESET -> "Password Reset";
             case TWO_FACTOR -> "Two-Factor Authentication";
+            case REGISTRATION -> "Account Registration";
+            case EMAIL_VERIFICATION -> "Email Verification";
+            default -> "Account Verification";
         };
 
         gmailNotificationService.sendOtpNotification(normalizedTarget, code, purpose);

@@ -48,7 +48,11 @@ public class GmailNotificationService {
             log.info("Email successfully dispatched via Gmail SMTP to {}", to);
             return true;
         } catch (Exception e) {
-            log.warn("Gmail SMTP send failed ({}), falling back to console log: {}", e.getMessage(), bodyText);
+            log.error("Gmail SMTP dispatch failed [{}]. Fallback console log:\n" +
+                            "================ [LOCAL GMAIL SIMULATION] ================\n" +
+                            "To: {}\nSubject: {}\nBody: {}\n" +
+                            "==========================================================",
+                    e.getMessage(), to, subject, bodyText);
             return true;
         }
     }

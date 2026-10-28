@@ -8,6 +8,7 @@ import com.project.authservice.entity.User;
 import com.project.authservice.repository.UserRepository;
 import com.project.authservice.security.JwtService;
 import com.project.authservice.service.AuthService;
+import com.project.authservice.service.OAuthService;
 import com.project.authservice.service.OtpService;
 import com.project.authservice.service.TotpService;
 import com.project.authservice.service.UserService;
@@ -35,6 +36,8 @@ public class AuthServiceImp implements AuthService {
     private TotpService totpService;
     @Autowired
     private OtpService otpService;
+    @Autowired
+    private OAuthService oAuthService;
     @Autowired
     private ModelMapper modelMapper;
 
@@ -64,18 +67,42 @@ public class AuthServiceImp implements AuthService {
 
     @Override
     public LoginResponse login(UserDto userDto) {
-        if (userDto == null || userDto.getEmail() == null || userDto.getEmail().isBlank()) {
+        if (userDto == null) {
+            throw new IllegalArgumentException("User details are required");
+        }
+
+        // If provider is OAuth (GOOGLE, GITHUB, FACEBOOK, etc.), delegate directly to OAuth login flow
+        if (userDto.getProvider() != null && userDto.getProvider() != Provider.LOCAL) {
+            OAuthLoginDto oauthDto = OAuthLoginDto.builder()
+                    .provider(userDto.getProvider().name())
+                    .email(userDto.getEmail())
+                    .name(userDto.getUsername())
+                    .build();
+            return oauthLogin(oauthDto);
+        }
+
+        if (userDto.getEmail() == null || userDto.getEmail().isBlank()) {
             throw new IllegalArgumentException("Email is required");
         }
         if (userDto.getPassword() == null || userDto.getPassword().isBlank()) {
             throw new IllegalArgumentException("Password is required");
         }
 
-        String email = userDto.getEmail().trim().toLowerCase();
-        User user = userRepository.findByEmail(email)
+        String identifier = userDto.getEmail().trim().toLowerCase();
+        User user = userRepository.findByEmail(identifier)
+                .or(() -> userRepository.findByUsername(userDto.getUsername() != null && !userDto.getUsername().isBlank()
+                        ? userDto.getUsername().trim()
+                        : identifier))
                 .orElseThrow(() -> new ResourceNotFoundException("Invalid Email or Password"));
 
+        if (!user.isEnabled()) {
+            throw new IllegalArgumentException("Account is disabled. Please contact support.");
+        }
+
         if (!passwordEncoder.matches(userDto.getPassword(), user.getPassword())) {
+            if (user.getProvider() != null && user.getProvider() != Provider.LOCAL) {
+                throw new IllegalArgumentException("This account is registered via " + user.getProvider() + ". Please sign in using " + user.getProvider() + ".");
+            }
             throw new IllegalArgumentException("Invalid Email or Password");
         }
 
@@ -100,6 +127,11 @@ public class AuthServiceImp implements AuthService {
                 .message("Login successful")
                 .user(modelMapper != null ? modelMapper.map(user, UserDto.class) : null)
                 .build();
+    }
+
+    @Override
+    public LoginResponse oauthLogin(OAuthLoginDto oAuthLoginDto) {
+        return oAuthService.processOAuthLogin(oAuthLoginDto);
     }
 
     @Override
@@ -144,13 +176,7 @@ public class AuthServiceImp implements AuthService {
             throw new IllegalArgumentException("Target email or phone number is required");
         }
 
-        OtpType type = OtpType.LOGIN;
-        if (requestDto.getType() != null && !requestDto.getType().isBlank()) {
-            try {
-                type = OtpType.valueOf(requestDto.getType().toUpperCase());
-            } catch (Exception ignored) {}
-        }
-
+        OtpType type = OtpType.fromString(requestDto.getType());
         otpService.generateAndSendOtp(requestDto.getTarget(), type);
     }
 

@@ -31,13 +31,10 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private com.project.authservice.service.OAuthService oAuthService;
-
     // OAuth SSO Login (Google, GitHub, Facebook)
     @PostMapping("/oauth/login")
     public ResponseEntity<LoginResponse> oauthLogin(@RequestBody OAuthLoginDto oAuthLoginDto) {
-        return ResponseEntity.ok(oAuthService.processOAuthLogin(oAuthLoginDto));
+        return ResponseEntity.ok(authService.oauthLogin(oAuthLoginDto));
     }
 
     // Standard Registration

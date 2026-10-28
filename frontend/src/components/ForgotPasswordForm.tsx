@@ -1,23 +1,15 @@
 import React, { useState } from 'react'
 import {
-  TextInput,
-  PasswordInput,
-  Anchor,
-  Box,
-} from '@mantine/core'
-import {
-  IconMail,
-  IconLock,
-  IconArrowRight,
   IconAlertCircle,
   IconCheck,
-  IconKey,
   IconArrowLeft,
+  IconShieldLock,
 } from '@tabler/icons-react'
+import { TechInput, TechButton } from './TechControls'
 import { forgotPasswordApi, resetPasswordApi } from '../services/authApi'
 
 export function ForgotPasswordForm({ onNavigateLogin }: { onNavigateLogin: () => void }) {
-  const [step, setStep] = useState(1) // 1: Request Code, 2: Enter Code & New Password, 3: Success
+  const [step, setStep] = useState<1 | 2 | 3>(1) // 1: Request Code, 2: Reset Password, 3: Success
   const [email, setEmail] = useState('')
   const [resetCode, setResetCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -31,22 +23,21 @@ export function ForgotPasswordForm({ onNavigateLogin }: { onNavigateLogin: () =>
     setError('')
     setSuccessMsg('')
 
-    if (!email) {
-      setError('Please enter your email address')
+    if (!email.trim()) {
+      setError('Please provide your registered work email address')
       return
     }
 
     setLoading(true)
     try {
-      const res = await forgotPasswordApi({ email })
-      setSuccessMsg(res.data?.message || 'Verification code sent to your email!')
+      const res = await forgotPasswordApi({ email: email.trim() })
+      setSuccessMsg(res.data?.message || 'Verification passcode dispatched to your email address.')
       setStep(2)
     } catch (err: any) {
-      setError(err.message || 'Failed to send reset code')
+      setError(err.message || 'Failed to dispatch password recovery code')
     } finally {
       setLoading(false)
     }
-
   }
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -54,8 +45,8 @@ export function ForgotPasswordForm({ onNavigateLogin }: { onNavigateLogin: () =>
     setError('')
     setSuccessMsg('')
 
-    if (!resetCode) {
-      setError('Verification code is required')
+    if (!resetCode.trim()) {
+      setError('6-digit verification code is required')
       return
     }
     if (!newPassword) {
@@ -73,276 +64,179 @@ export function ForgotPasswordForm({ onNavigateLogin }: { onNavigateLogin: () =>
 
     setLoading(true)
     try {
-      const res = await resetPasswordApi({ email, resetCode, newPassword })
+      const res = await resetPasswordApi({
+        email: email.trim(),
+        resetCode: resetCode.trim(),
+        newPassword,
+      })
       setSuccessMsg(res.data?.message || 'Password successfully updated!')
       setStep(3)
     } catch (err: any) {
-      setError(err.message || 'Failed to reset password')
+      setError(err.message || 'Unable to reset password')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Box className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header */}
-      <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Box className="tech-logo-box">R&amp;D</Box>
+    <div className="rnd-fade-in" style={{ display: 'flex', flexDirection: 'column' }}>
+      {/* Brand Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <div className="rnd-logo-square">R&amp;D</div>
         <button
+          type="button"
           onClick={onNavigateLogin}
           style={{
             background: 'none',
             border: 'none',
-            color: '#2563eb',
+            color: 'var(--color-brand-primary)',
             fontFamily: 'var(--font-mono)',
             fontSize: '0.74rem',
-            fontWeight: 700,
+            fontWeight: 600,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
+            gap: 5,
           }}
         >
           <IconArrowLeft size={14} />
-          BACK TO LOGIN
+          <span>RETURN TO LOGIN</span>
         </button>
-      </Box>
+      </div>
 
-      <Box className="tech-kicker" style={{ marginBottom: 8 }}>
-        PASSWORD RECOVERY &bull; GMAIL SECURED
-      </Box>
-      <h1 className="tech-headline">
-        RESET YOUR <br />
-        PASSWORD<span className="tech-headline-dot">.</span>
-      </h1>
-      <p className="tech-subtitle" style={{ marginTop: 6, marginBottom: 20 }}>
-        {step === 1 && 'Enter your registered email to receive a secure Gmail verification code.'}
-        {step === 2 && 'Enter the 6-digit code sent to your email and your new password.'}
-        {step === 3 && 'Your account security credentials have been updated.'}
-      </p>
+      <div style={{ marginBottom: 22 }}>
+        <span className="tech-kicker-badge" style={{ marginBottom: 6 }}>
+          <IconShieldLock size={12} />
+          CREDENTIAL RECOVERY
+        </span>
+        <h2 className="rnd-form-heading">RESET PASSWORD.</h2>
+        <p className="rnd-form-subtext">
+          {step === 1 && 'Enter your registered work email to receive a secure verification code.'}
+          {step === 2 && 'Enter the 6-digit code sent to your email and choose a new password.'}
+          {step === 3 && 'Your security credentials have been updated successfully.'}
+        </p>
+      </div>
 
-      {/* Error alert */}
       {error && (
-        <Box
-          style={{
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            color: '#b91c1c',
-            padding: '10px 14px',
-            borderRadius: 8,
-            fontSize: '0.82rem',
-            marginBottom: 16,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <IconAlertCircle size={16} />
+        <div className="rnd-alert rnd-alert-error" role="alert">
+          <IconAlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>{error}</span>
-        </Box>
+        </div>
       )}
 
-      {/* Success alert */}
       {successMsg && (
-        <Box
-          style={{
-            backgroundColor: '#f0fdf4',
-            border: '1px solid #bbf7d0',
-            color: '#15803d',
-            padding: '10px 14px',
-            borderRadius: 8,
-            fontSize: '0.82rem',
-            marginBottom: 16,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <IconCheck size={16} />
+        <div className="rnd-alert rnd-alert-success" role="status">
+          <IconCheck size={16} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>{successMsg}</span>
-        </Box>
+        </div>
       )}
 
       {/* Step 1: Request Code */}
       {step === 1 && (
         <form onSubmit={handleRequestCode} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <Box>
-            <label className="tech-mono-label" htmlFor="forgot-email">
-              ACCOUNT EMAIL
-            </label>
-            <TextInput
-              id="forgot-email"
-              value={email}
-              onChange={(e) => setEmail(e.currentTarget.value)}
-              placeholder="e.g. engineer@workspace.ai"
-              leftSection={<IconMail size={18} color="#6b7280" />}
-              required
-              styles={{
-                input: {
-                  height: 48,
-                  borderRadius: 10,
-                  borderColor: '#e5e7eb',
-                  fontFamily: 'var(--font-body)',
-                },
-              }}
-            />
-          </Box>
+          <TechInput
+            id="forgot-email"
+            label="REGISTERED WORK EMAIL"
+            type="email"
+            placeholder="engineer@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
 
-          <button
-            type="submit"
-            className="tech-btn-primary"
-            disabled={loading}
-            style={{ marginTop: 8 }}
-          >
-            {loading ? 'SENDING CODE...' : (
-              <>
-                <span>SEND VERIFICATION CODE</span>
-                <IconArrowRight size={18} />
-              </>
-            )}
-          </button>
+          <TechButton type="submit" loading={loading} loadingText="DISPATCHING CODE..." style={{ marginTop: 8 }}>
+            SEND VERIFICATION CODE
+          </TechButton>
         </form>
       )}
 
       {/* Step 2: Enter Code & New Password */}
       {step === 2 && (
         <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Box>
-            <label className="tech-mono-label" htmlFor="reset-code">
-              6-DIGIT VERIFICATION CODE
-            </label>
-            <TextInput
-              id="reset-code"
-              value={resetCode}
-              onChange={(e) => setResetCode(e.currentTarget.value)}
-              placeholder="e.g. 123456"
-              leftSection={<IconKey size={18} color="#6b7280" />}
-              maxLength={6}
-              required
-              styles={{
-                input: {
-                  height: 48,
-                  borderRadius: 10,
-                  borderColor: '#e5e7eb',
-                  fontFamily: 'var(--font-mono)',
-                  letterSpacing: '0.15em',
-                  fontWeight: 700,
-                },
-              }}
-            />
-          </Box>
+          <TechInput
+            id="reset-code"
+            label="6-DIGIT VERIFICATION CODE"
+            placeholder="123456"
+            value={resetCode}
+            onChange={(e) => setResetCode(e.target.value)}
+            maxLength={6}
+            required
+          />
 
-          <Box>
-            <label className="tech-mono-label" htmlFor="new-password">
-              NEW PASSWORD
-            </label>
-            <PasswordInput
-              id="new-password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.currentTarget.value)}
-              placeholder="At least 6 characters"
-              leftSection={<IconLock size={18} color="#6b7280" />}
-              required
-              styles={{
-                input: {
-                  height: 48,
-                  borderRadius: 10,
-                  borderColor: '#e5e7eb',
-                },
-              }}
-            />
-          </Box>
+          <TechInput
+            id="new-password"
+            label="NEW PASSWORD"
+            isPassword
+            placeholder="Minimum 6 characters"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+            autoComplete="new-password"
+          />
 
-          <Box>
-            <label className="tech-mono-label" htmlFor="confirm-password">
-              CONFIRM NEW PASSWORD
-            </label>
-            <PasswordInput
-              id="confirm-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.currentTarget.value)}
-              placeholder="Re-type new password"
-              leftSection={<IconLock size={18} color="#6b7280" />}
-              required
-              styles={{
-                input: {
-                  height: 48,
-                  borderRadius: 10,
-                  borderColor: '#e5e7eb',
-                },
-              }}
-            />
-          </Box>
+          <TechInput
+            id="confirm-new-password"
+            label="CONFIRM NEW PASSWORD"
+            isPassword
+            placeholder="Confirm new password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            autoComplete="new-password"
+          />
 
-          <button
-            type="submit"
-            className="tech-btn-primary"
-            disabled={loading}
-            style={{ marginTop: 8 }}
-          >
-            {loading ? 'RESETTING PASSWORD...' : (
-              <>
-                <span>CONFIRM &amp; SAVE PASSWORD</span>
-                <IconCheck size={18} />
-              </>
-            )}
-          </button>
+          <TechButton type="submit" loading={loading} loadingText="UPDATING CREDENTIALS..." style={{ marginTop: 8 }}>
+            CONFIRM &amp; SAVE PASSWORD
+          </TechButton>
         </form>
       )}
 
-      {/* Step 3: Success */}
+      {/* Step 3: Success Screen */}
       {step === 3 && (
-        <Box style={{ marginTop: 24, textAlign: 'center' }}>
-          <Box
+        <div style={{ textAlign: 'center', padding: '16px 0' }}>
+          <div
             style={{
-              width: 56,
-              height: 56,
+              width: 52,
+              height: 52,
               borderRadius: '50%',
-              backgroundColor: '#ecfdf5',
-              color: '#059669',
+              backgroundColor: '#ECFDF3',
+              color: '#18794E',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 16px',
             }}
           >
-            <IconCheck size={32} />
-          </Box>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>
-            Password Reset Successful!
-          </h2>
-          <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: 24 }}>
-            Your password has been securely updated. You can now sign in with your new credentials.
+            <IconCheck size={28} />
+          </div>
+          <h3 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-heading)', color: '#1A1A1A', marginBottom: 6 }}>
+            Password Reset Complete
+          </h3>
+          <p style={{ color: '#85899E', fontSize: '0.85rem', marginBottom: 22, lineHeight: 1.45 }}>
+            Your credentials have been securely updated. You can now access your R&amp;D engineering workspace.
           </p>
-          <button
-            onClick={onNavigateLogin}
-            className="tech-btn-primary"
-            style={{ width: '100%' }}
-          >
-            <span>PROCEED TO SIGN IN</span>
-            <IconArrowRight size={18} />
-          </button>
-        </Box>
+
+          <TechButton onClick={onNavigateLogin}>
+            PROCEED TO SIGN IN
+          </TechButton>
+        </div>
       )}
 
       {/* Footer Return Link */}
-      <Box style={{ marginTop: 'auto', paddingTop: 24, textAlign: 'center' }}>
-        <Anchor
+      <div style={{ marginTop: 24, textAlign: 'center' }}>
+        <a
           href="#login"
+          className="rnd-link"
+          style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem' }}
           onClick={(e) => {
             e.preventDefault()
             onNavigateLogin()
           }}
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.75rem',
-            color: '#64748b',
-            textDecoration: 'none',
-          }}
         >
-          Remember your password? <span style={{ color: '#2563eb', fontWeight: 700 }}>SIGN IN</span>
-        </Anchor>
-      </Box>
-    </Box>
+          Remembered your password? <strong>SIGN IN</strong>
+        </a>
+      </div>
+    </div>
   )
 }

@@ -5,6 +5,7 @@ import com.project.authservice.dto.*;
 public interface AuthService {
     UserDto register(UserDto userDto);
     LoginResponse login(UserDto userDto);
+    LoginResponse oauthLogin(OAuthLoginDto oAuthLoginDto);
     LoginResponse verifyTwoFactor(TwoFactorVerifyDto verifyDto);
     void sendOtp(OtpRequestDto requestDto);
     LoginResponse loginWithOtp(OtpVerifyDto verifyDto);
